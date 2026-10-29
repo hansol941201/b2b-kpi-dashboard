@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>B2B 통합 KPI 대시보드</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root {
+  color-scheme: light;
+  --navy: #1d3a6b; --navy-2: #2c5394; --navy-wash: #eaf0f9;
+  --bg: #f3f5f8; --surface: #ffffff; --surface-2: #f6f8fb; --line: #e2e7ee; --grid: #edf0f4;
+  --ink: #14202f; --ink-2: #475467; --ink-3: #7a8597;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #9aa5b5; --s1-wash: rgba(42,120,214,.10);
+  --good: #0b8a3e; --warn: #a86400; --crit: #c23b3b; --wait: #5f6b7a; --ref: #4f6482;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); }
+body { font-family: "Pretendard Variable", Pretendard, "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif; font-size: 16px; line-height: 1.55; -webkit-text-size-adjust: 100%; word-break: keep-all; overflow-wrap: anywhere; }
+button, input, select { font: inherit; }
+a { color: var(--navy-2); }
+header.top { background: var(--navy); color: #fff; }
+header.top .in { max-width: 1240px; margin: 0 auto; padding: 18px 20px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+header.top h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.4px; }
+header.top .sub { font-size: 13.5px; opacity: .82; margin-top: 2px; }
+.stat { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13.5px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.28); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+.pill i { width: 8px; height: 8px; border-radius: 50%; background: #5fd38d; display: inline-block; }
+.pill.stale i { background: #ffb547; } .pill.err i { background: #ff7b7b; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; padding: 8px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--navy); font-weight: 600; cursor: pointer; text-decoration: none; }
+.btn.light { background: rgba(255,255,255,.14); color: #fff; border-color: rgba(255,255,255,.35); }
+.btn.primary { background: var(--navy); color: #fff; border-color: var(--navy); }
+.btn:disabled { opacity: .55; cursor: wait; }
+nav.tabs { position: sticky; top: 0; z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); box-shadow: 0 1px 0 rgba(20,32,47,.02); }
+nav.tabs .in { max-width: 1240px; margin: 0 auto; display: flex; gap: 4px; overflow-x: auto; padding: 0 12px; scrollbar-width: none; }
+nav.tabs .in::-webkit-scrollbar { display: none; }
+nav.tabs button { flex: 0 0 auto; background: none; border: 0; border-bottom: 3px solid transparent; color: var(--ink-2); font-size: 15.5px; font-weight: 600; padding: 14px 14px 11px; min-height: 52px; cursor: pointer; white-space: nowrap; }
+nav.tabs button[aria-selected="true"] { color: var(--navy); border-bottom-color: var(--navy); }
+main { max-width: 1240px; margin: 0 auto; padding: 22px 20px 8px; }
+section.page { display: none; } section.page.on { display: block; }
+.ph { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px; margin: 2px 0 16px; }
+.ph h2 { margin: 0; font-size: 22px; letter-spacing: -.4px; color: var(--ink); }
+.ph p { margin: 4px 0 0; color: var(--ink-2); font-size: 14.5px; }
+h3.sec { font-size: 17px; margin: 26px 0 10px; color: var(--navy); letter-spacing: -.2px; }
+.grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 700px) { .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1040px) { .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } .g21 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-width: 0; }
+.card > h4 { margin: 0; font-size: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.card > .cap { color: var(--ink-3); font-size: 13px; margin: 3px 0 12px; }
+.card.click { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.card.click:hover, .card.click:focus-visible { border-color: var(--navy-2); box-shadow: 0 4px 16px rgba(29,58,107,.10); outline: none; }
+.kpi .k { font-size: 14px; color: var(--ink-2); font-weight: 600; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; }
+.kpi .v { font-size: 34px; font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin: 10px 0 4px; font-variant-numeric: tabular-nums; color: var(--ink); }
+.kpi .v.na { font-size: 24px; color: var(--wait); letter-spacing: -.4px; }
+.kpi .v.need { font-size: 24px; color: var(--crit); letter-spacing: -.4px; }
+.kpi .d { font-size: 14px; color: var(--ink-2); }
+.kpi .more { margin-top: 10px; font-size: 13px; color: var(--navy-2); font-weight: 600; }
+.up { color: var(--good); font-weight: 700; } .down { color: var(--crit); font-weight: 700; }
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; line-height: 1.5; }
+.b-ok { color: var(--good); } .b-ref { color: var(--ref); } .b-ver { color: var(--warn); } .b-no { color: var(--crit); } .b-wait { color: var(--wait); } .b-op { color: var(--ink-3); }
+.tiles { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 900px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.tile { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-width: 0; }
+.tile .k { font-size: 13px; color: var(--ink-2); }
+.tile .v { font-size: 24px; font-weight: 800; letter-spacing: -.6px; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.tile .d { font-size: 13px; color: var(--ink-2); line-height: 1.45; margin-top: 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+.filters label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--ink-2); font-weight: 600; min-width: 0; }
+.filters select, .filters input[type=search], .filters input[type=text] { min-height: 44px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); font-size: 15px; min-width: 0; max-width: 100%; }
+.filters .grow { flex: 1 1 220px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { border: 1px solid var(--line); background: #fff; color: var(--ink-2); border-radius: 999px; padding: 7px 14px; font-size: 14px; min-height: 40px; cursor: pointer; }
+.chips button[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--ink-2); margin: 0 0 6px; }
+.legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--ink-2); font-size: 12px; font-family: inherit; }
+.chart .gridline { stroke: var(--grid); stroke-width: 1; }
+.chart .lbl { fill: var(--ink); font-size: 12px; font-weight: 700; }
+.basis { font-size: 12.5px; color: var(--ink-3); margin-top: 8px; }
+.tip { position: absolute; pointer-events: none; background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 13px; box-shadow: 0 6px 18px rgba(20,32,47,.14); white-space: nowrap; z-index: 50; display: none; }
+.tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 10px 11px; border-bottom: 1px solid var(--grid); text-align: left; vertical-align: top; }
+th { background: var(--surface-2); color: var(--ink-2); font-weight: 600; white-space: nowrap; position: sticky; top: 0; z-index: 1; }
+td, th { overflow-wrap: normal; word-break: keep-all; } td:first-child { min-width: 7.5em; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+details.more { margin-top: 10px; } details.more > summary { cursor: pointer; color: var(--navy-2); font-size: 14px; font-weight: 600; padding: 6px 0; min-height: 36px; list-style-position: inside; }
+.note { font-size: 13px; color: var(--ink-3); margin: 8px 0 0; }
+.callout { border: 1px solid #f1d9b5; background: #fff8ee; padding: 12px 14px; border-radius: 12px; font-size: 14px; color: #6b4a12; margin: 0 0 16px; }
+.callout.red { border-color: #f2c4c4; background: #fff4f4; color: #7a2323; }
+.callout.blue { border-color: #cddcf2; background: var(--navy-wash); color: #1d3a6b; }
+.list { margin: 0; padding: 0; list-style: none; }
+.list li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--grid); font-size: 14.5px; }
+.list li:last-child { border-bottom: 0; }
+.list .go { margin-left: auto; flex: 0 0 auto; }
+.steps { display: grid; gap: 8px; }
+.step { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.step .no { width: 30px; height: 30px; border-radius: 50%; background: var(--navy-wash); color: var(--navy); font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.step .t { font-size: 14.5px; font-weight: 600; } .step .s { font-size: 12.5px; color: var(--ink-3); }
+.step .val { text-align: right; font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.step .bar { grid-column: 2 / 4; height: 8px; background: var(--grid); border-radius: 4px; overflow: hidden; }
+.step .bar span { display: block; height: 100%; background: var(--s1); border-radius: 4px; }
+.step.na .val { color: var(--crit); font-size: 15px; }
+.scale { position: relative; height: 34px; margin: 12px 0 4px; }
+.scale .track { position: absolute; left: 0; right: 0; top: 14px; height: 8px; border-radius: 4px; background: var(--grid); }
+.scale .mk { position: absolute; top: 4px; width: 2px; height: 28px; background: var(--ink-3); }
+.scale .mk span { position: absolute; top: -2px; left: 6px; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+.tgt { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.tgt span { font-size: 12.5px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; color: var(--ink-2); }
+.firm-res { display: grid; gap: 8px; }
+.firm-res button { text-align: left; border: 1px solid var(--line); background: #fff; border-radius: 12px; padding: 12px 14px; cursor: pointer; display: grid; gap: 2px; min-height: 52px; }
+.firm-res button[aria-current="true"] { border-color: var(--navy); box-shadow: inset 3px 0 0 var(--navy); }
+.firm-res .nm { font-weight: 700; } .firm-res .meta { font-size: 13px; color: var(--ink-3); }
+.lv { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 760px) { .lv { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.lv .card h5 { margin: 0 0 6px; font-size: 15px; color: var(--navy); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; font-size: 14px; }
+.kv dt { color: var(--ink-3); } .kv dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.empty { color: var(--ink-3); font-size: 14px; }
+.state { max-width: 640px; margin: 60px auto; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 32px 24px; }
+.state h2 { margin: 0 0 8px; font-size: 22px; } .state p { color: var(--ink-2); }
+.spin { width: 36px; height: 36px; border: 4px solid var(--navy-wash); border-top-color: var(--navy); border-radius: 50%; margin: 0 auto 16px; animation: sp 1s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+dialog { border: 0; border-radius: 16px; padding: 0; width: min(720px, calc(100vw - 24px)); max-height: calc(100vh - 40px); box-shadow: 0 20px 60px rgba(20,32,47,.25); }
+dialog::backdrop { background: rgba(20,32,47,.45); }
+dialog .hd { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: #fff; }
+dialog .hd h3 { margin: 0; font-size: 18px; }
+dialog .bd { padding: 16px 18px 20px; font-size: 15px; }
+footer { max-width: 1240px; margin: 0 auto; padding: 18px 20px 36px; color: var(--ink-3); font-size: 13px; }
+.mode { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.mode button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; border: 1px solid var(--line); background: var(--surface-2); border-radius: 12px; padding: 10px 12px; min-height: 72px; cursor: pointer; color: var(--ink); min-width: 0; }
+.mode button[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+.mode .t { font-size: 13.5px; font-weight: 700; } .mode .n { font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.4px; } .mode .s { font-size: 12px; opacity: .8; }
+.mode .n { white-space: nowrap; }
+.hbtn { display: inline-flex; align-items: center; margin-left: 6px; padding: 2px 8px; min-height: 26px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: var(--navy-2); font-size: 12px; font-weight: 600; cursor: pointer; vertical-align: middle; white-space: nowrap; line-height: 1.2; letter-spacing: 0; }
+.hbtn:hover, .hbtn:focus-visible { border-color: var(--navy-2); background: var(--navy-wash); }
+.help-tbl td { font-size: 15px; line-height: 1.55; vertical-align: top; } .help-tbl td:first-child { width: 36%; font-weight: 600; color: var(--ink); }
+@media (max-width: 520px) { .mode { gap: 6px; } .mode button { padding: 8px 9px; } .mode .t { font-size: 12.5px; } .mode .n { font-size: 17px; } .mode .s { font-size: 11px; } }
+.nl { display: grid; gap: 8px; }
+@media (min-width: 900px) { .nl { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.nl .it { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: #fff; min-width: 0; }
+.nl .r1 { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; margin-bottom: 2px; }
+.nl .nm { font-weight: 700; font-size: 15px; min-width: 0; }
+.nl .mt { font-size: 13px; color: var(--ink-2); }
+@media (max-width: 520px) { header.top .in { padding: 14px 16px; } header.top h1 { font-size: 19px; } main { padding: 16px 16px 8px; } .card { padding: 15px; } .kpi .v { font-size: 28px; } .ph h2 { font-size: 20px; } .tile .v { font-size: 20px; } .filters { padding: 12px; } .filters label { flex: 1 1 140px; } footer { padding: 16px; } }
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+  <div><h1>B2B 통합 KPI 대시보드</h1><div class="sub">영업활동 → 기술지원(L3) → 공고·낙찰 → 자재 매출 흐름</div></div>
+  <div class="stat" id="stat"></div>
+</div></header>
+<nav class="tabs" aria-label="대시보드 화면"><div class="in" role="tablist" id="tabs"></div></nav>
+<main id="main"></main>
+<footer id="foot"></footer>
+<dialog id="dlg" aria-labelledby="dlgT"><div class="hd"><h3 id="dlgT"></h3><button class="btn" type="button" id="dlgX">닫기</button></div><div class="bd" id="dlgB"></div></dialog>
+<script>
+(function () {
+  'use strict';
+  var WEBAPP_URL = '__WEBAPP_URL__';
+  var D = null, R = null;
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  function el(tag, attrs, html) { var e = document.createElement(tag); if (attrs) for (var k in attrs) e.setAttribute(k, attrs[k]); if (html !== undefined) e.innerHTML = html; return e; }
+  function esc(s) { return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function nf(n) { return n === null || n === undefined ? '—' : Number(n).toLocaleString('ko-KR'); }
+  function eok(n, d) { if (n === null || n === undefined) return '—'; var v = n / 1e8; return v.toFixed(d === undefined ? (Math.abs(v) >= 1000 ? 0 : 1) : d) + '억'; }
+  function won(n) { if (n === null || n === undefined) return '—'; return Math.abs(n) >= 1e8 ? eok(n) + '원' : Math.round(n / 1e4).toLocaleString('ko-KR') + '만원'; }
+  function wonFull(n) { return n === null || n === undefined ? '—' : Number(n).toLocaleString('ko-KR') + '원'; }
+  function pct(a, b) { return b ? Math.round(a / b * 1000) / 10 : null; }
+  function pc(n) { if (n === null || n === undefined) return '<span class="empty">비교 불가</span>'; return '<span class="' + (n >= 0 ? 'up' : 'down') + '">' + (n > 0 ? '+' : '') + n + '%</span>'; }
+  function pcT(n) { return n === null || n === undefined ? '비교 불가' : (n > 0 ? '+' : '') + n + '%'; }
+  function cnt(n, unit) { return n === null || n === undefined ? '산출 불가' : nf(n) + (unit || '건'); }
+  var BADGE = { '확정': ['b-ok', '✓ 확정'], '참고': ['b-ref', 'ⓘ 참고'], '검증 중': ['b-ver', '◐ 검증 중'], '미확정': ['b-no', '✕ 미확정'], '증빙 확인 필요': ['b-no', '✕ 증빙 확인 필요'], '산출 대기': ['b-wait', '⧗ 계산에 필요한 자료 부족'], '참고값': ['b-ref', 'ⓘ 참고값'], '잠정': ['b-ver', '◐ 잠정(관측 중)'], '운영 기록': ['b-op', '운영 기록'], '요약·검산': ['b-op', '요약·검산'], '원본 사본·중복': ['b-op', '사본·중복'], '빈 탭': ['b-op', '빈 탭'] };
+  function badge(s) { var b = BADGE[s] || ['b-op', s]; return '<span class="badge ' + b[0] + '">' + esc(b[1]) + '</span>'; }
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+
+  // ── 차트(SVG): 막대·꺾은선, 툴팁, 표 보기 ──
+  var MOB = window.innerWidth < 640;
+  var tipEl;
+  function tip(html, ev) { if (!tipEl) { tipEl = el('div', { class: 'tip', role: 'tooltip' }); document.body.appendChild(tipEl); } if (!html) { tipEl.style.display = 'none'; return; } tipEl.innerHTML = html; tipEl.style.display = 'block'; var x = ev.pageX + 14, y = ev.pageY + 14; var w = tipEl.offsetWidth; if (x + w > window.scrollX + document.documentElement.clientWidth - 8) x = ev.pageX - w - 14; tipEl.style.left = Math.max(8, x) + 'px'; tipEl.style.top = y + 'px'; }
+  document.addEventListener('scroll', function () { tip(null); }, { passive: true });
+  function niceStep(v) { if (v <= 0) return 1; var p = Math.pow(10, Math.floor(Math.log10(v))), m = v / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; }
+  function svgNS(tag, a) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (var k in a) e.setAttribute(k, a[k]); return e; }
+  function legend(series) { return '<div class="legend">' + series.map(function (s) { return '<span><i style="background:var(' + s.c + ')"></i>' + esc(s.name) + '</span>'; }).join('') + '</div>'; }
+  function mount(host, svg) { var d = el('div', { class: 'chart' }); d.appendChild(svg); host.appendChild(d); }
+  function add(host, html) { host.insertAdjacentHTML('beforeend', html); }
+  function bars(host, cats, series, opt) {
+    opt = opt || {}; var W = MOB ? 360 : (opt.w || 640), H = MOB ? Math.min(opt.h || 260, 230) : (opt.h || 260), L = MOB ? 42 : 52, R = 8, T = 20, B = 28;
+    var LONG = MOB ? 6 : 10; var wrapOf = function (c) { c = String(c); if (c.length <= LONG) return [c]; var i = c.search(/[ (·\/]/); if (i < 2 || i > c.length - 2) i = Math.ceil(c.length / 2); return [c.slice(0, i).trim(), c.slice(i).trim()]; }; if (cats.some(function (c) { return wrapOf(c).length > 1; })) B = 42;
+    var stack = opt.mode === 'stack'; var tot = cats.map(function (_, i) { return series.reduce(function (s, se) { return s + Math.max(0, se.vals[i] || 0); }, 0); });
+    var mx = stack ? Math.max.apply(null, tot) : Math.max.apply(null, series.map(function (s) { return Math.max.apply(null, s.vals.map(function (v) { return v || 0; })); })); if (!(mx > 0)) mx = 1;
+    var svg = svgNS('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': opt.label || '' });
+    var pw = W - L - R, ph = H - T - B, fmt = opt.fmt || nf, tfmt = opt.tfmt || fmt; var stp = niceStep(mx / 4); mx = Math.ceil(mx / stp - 1e-9) * stp; var nt = Math.round(mx / stp);
+    for (var g = 0; g <= nt; g++) { var y = T + ph - ph * g / nt; svg.appendChild(svgNS('line', { x1: L, x2: W - R, y1: y, y2: y, class: 'gridline' })); var t = svgNS('text', { x: L - 6, y: y + 4, 'text-anchor': 'end' }); t.textContent = tfmt(stp * g); svg.appendChild(t); }
+    var band = pw / cats.length, bw = Math.min(opt.bw || 28, (band * 0.72) / (stack ? 1 : series.length));
+    cats.forEach(function (cat, i) {
+      var cx = L + band * i + band / 2; var wl = wrapOf(cat); wl.forEach(function (ln, li) { var tx = svgNS('text', { x: cx, y: H - 8 - (wl.length - 1 - li) * 13, 'text-anchor': 'middle' }); tx.textContent = ln; svg.appendChild(tx); });
+      var acc = 0, groupW = stack ? bw : bw * series.length + 2 * (series.length - 1);
+      series.forEach(function (se, si) {
+        var v = se.vals[i]; if (v === null || v === undefined) return; var h = Math.max(0, v) / mx * ph;
+        var x = stack ? cx - bw / 2 : cx - groupW / 2 + si * (bw + 2), y0 = T + ph - (stack ? acc : 0) / mx * ph; var y1 = y0 - h; var gap = stack && si > 0 && acc > 0 ? 2 : 0;
+        var top = stack ? series.slice(si + 1).every(function (s2) { return !(s2.vals[i] > 0); }) : true;
+        var r = top ? Math.min(4, h / 2, bw / 2) : 0, hh = Math.max(0, h - gap);
+        if (hh > 0.3) { var d = 'M' + x + ',' + (y0 - gap) + 'V' + (y1 + r) + (r ? 'Q' + x + ',' + y1 + ' ' + (x + r) + ',' + y1 : '') + 'H' + (x + bw - r) + (r ? 'Q' + (x + bw) + ',' + y1 + ' ' + (x + bw) + ',' + (y1 + r) : '') + 'V' + (y0 - gap) + 'Z'; svg.appendChild(svgNS('path', { d: d, fill: 'var(' + se.c + ')' })); }
+        var hit = svgNS('rect', { x: x - 3, y: Math.min(y1, y0 - 14) - 3, width: bw + 6, height: Math.max(h, 14) + 6, fill: 'transparent' });
+        var show = function (ev) { tip('<div>' + esc(cat) + '</div><div>' + esc(se.name) + ': <b>' + fmt(v) + '</b></div>' + (opt.extra ? opt.extra(i, si) : ''), ev); };
+        hit.addEventListener('mousemove', show); hit.addEventListener('touchstart', function (e) { show(e.touches[0]); }, { passive: true }); hit.addEventListener('mouseleave', function () { tip(null); }); svg.appendChild(hit);
+        if (!stack && opt.labels !== false && (series.length === 1 || opt.labels === 'all')) { var lt = svgNS('text', { x: x + bw / 2, y: y1 - 5, 'text-anchor': 'middle', class: 'lbl' }); lt.textContent = (opt.lfmt || fmt)(v); svg.appendChild(lt); }
+        acc += Math.max(0, v);
+      });
+      if (stack && opt.labels !== false) { var lt2 = svgNS('text', { x: cx, y: T + ph - tot[i] / mx * ph - 5, 'text-anchor': 'middle', class: 'lbl' }); lt2.textContent = (opt.lfmt || fmt)(tot[i]); svg.appendChild(lt2); }
+    });
+    svg.appendChild(svgNS('line', { x1: L, x2: W - R, y1: T + ph, y2: T + ph, stroke: 'var(--line)' }));
+    mount(host, svg);
+  }
+  function hbars(host, rows, opt) { // rows [{name, v, c}]
+    opt = opt || {}; var mx = Math.max.apply(null, rows.map(function (r) { return r.v || 0; })) || 1; var fmt = opt.fmt || nf;
+    add(host, '<div class="steps">' + rows.map(function (r) { return '<div class="step" style="grid-template-columns:minmax(0,1fr) auto"><div><div class="t">' + esc(r.name) + '</div>' + (r.sub ? '<div class="s">' + esc(r.sub) + '</div>' : '') + '</div><div class="val">' + fmt(r.v) + '</div><div class="bar" style="grid-column:1/3"><span style="width:' + Math.max(0.5, (r.v || 0) / mx * 100) + '%;background:var(' + (r.c || '--s1') + ')"></span></div></div>'; }).join('') + '</div>');
+  }
+  function lines(host, xs, series, opt) {
+    opt = opt || {}; var ticks = MOB ? 4 : (opt.ticks || 10); var W = MOB ? 360 : (opt.w || 1000), H = MOB ? 230 : (opt.h || 280), L = MOB ? 42 : 52, R = 12, T = 16, B = 28, pw = W - L - R, ph = H - T - B, fmt = opt.fmt || nf;
+    var all = []; series.forEach(function (s) { s.vals.forEach(function (v) { if (v !== null && v !== undefined) all.push(v); }); }); if (!all.length) all = [0, 1];
+    var rawMx = Math.max.apply(null, all) || 1, stp = niceStep(rawMx / 4), mx = Math.ceil(rawMx / stp - 1e-9) * stp, rawMn = Math.min(0, Math.min.apply(null, all)); var mn = (-rawMn < rawMx * 0.03) ? 0 : -Math.ceil(-rawMn / stp) * stp; var nt = Math.round((mx - mn) / stp);
+    var X = function (i) { return L + (xs.length === 1 ? pw / 2 : pw * i / (xs.length - 1)); }, Yf = function (v) { return T + ph - (v - mn) / (mx - mn) * ph; };
+    var svg = svgNS('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': opt.label || '' });
+    for (var g = 0; g <= nt; g++) { var gv = mn + stp * g, y = Yf(gv); svg.appendChild(svgNS('line', { x1: L, x2: W - R, y1: y, y2: y, class: 'gridline' })); var t = svgNS('text', { x: L - 6, y: y + 4, 'text-anchor': 'end' }); t.textContent = (opt.tfmt || fmt)(gv); svg.appendChild(t); }
+    var every = Math.max(1, Math.ceil(xs.length / ticks));
+    xs.forEach(function (x, i) { if ((i % every === 0 && xs.length - 1 - i >= every / 2) || i === xs.length - 1) { var t = svgNS('text', { x: X(i), y: H - 8, 'text-anchor': 'middle' }); t.textContent = opt.xfmt ? opt.xfmt(x) : x; svg.appendChild(t); } });
+    series.forEach(function (s, si) { var d = '', first = -1; s.vals.forEach(function (v, i) { if (v === null || v === undefined) return; if (first < 0) first = i; d += (d ? 'L' : 'M') + X(i) + ',' + Yf(v); }); if (!d) return; if (opt.area && si === 0) { var li0 = s.vals.length - 1; while (li0 > 0 && (s.vals[li0] === null || s.vals[li0] === undefined)) li0--; svg.appendChild(svgNS('path', { d: d + 'L' + X(li0) + ',' + Yf(Math.max(mn, 0)) + 'L' + X(first) + ',' + Yf(Math.max(mn, 0)) + 'Z', fill: 'var(--s1-wash)' })); } svg.appendChild(svgNS('path', { d: d, fill: 'none', stroke: 'var(' + s.c + ')', 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+      var li = s.vals.length - 1; while (li > 0 && (s.vals[li] === null || s.vals[li] === undefined)) li--; svg.appendChild(svgNS('circle', { cx: X(li), cy: Yf(s.vals[li]), r: 4, fill: 'var(' + s.c + ')', stroke: '#fff', 'stroke-width': 2 })); });
+    var cross = svgNS('line', { y1: T, y2: T + ph, stroke: 'var(--ink-3)', 'stroke-width': 1, opacity: 0 }); svg.appendChild(cross);
+    var dots = series.map(function (s) { var c = svgNS('circle', { r: 4, fill: 'var(' + s.c + ')', stroke: '#fff', 'stroke-width': 2, opacity: 0 }); svg.appendChild(c); return c; });
+    var hit = svgNS('rect', { x: L, y: T, width: pw, height: ph, fill: 'transparent' }); svg.appendChild(hit);
+    function move(ev) { var r = svg.getBoundingClientRect(); var px = (ev.clientX - r.left) / r.width * W; var i = Math.round((px - L) / pw * (xs.length - 1)); i = Math.max(0, Math.min(xs.length - 1, i)); cross.setAttribute('x1', X(i)); cross.setAttribute('x2', X(i)); cross.setAttribute('opacity', 1);
+      var html = '<div>' + esc(opt.xfmt ? opt.xfmt(xs[i]) : xs[i]) + '</div>'; series.forEach(function (s, si) { var v = s.vals[i]; if (v === null || v === undefined) { dots[si].setAttribute('opacity', 0); return; } dots[si].setAttribute('cx', X(i)); dots[si].setAttribute('cy', Yf(v)); dots[si].setAttribute('opacity', 1); html += '<div><span style="display:inline-block;width:10px;height:2px;background:var(' + s.c + ');vertical-align:middle;margin-right:6px"></span>' + esc(s.name) + ': <b>' + fmt(v) + '</b></div>'; }); tip(html, ev); }
+    hit.addEventListener('mousemove', move); hit.addEventListener('mouseleave', function () { cross.setAttribute('opacity', 0); dots.forEach(function (d) { d.setAttribute('opacity', 0); }); tip(null); });
+    hit.addEventListener('touchstart', function (e) { move(e.touches[0]); }, { passive: true });
+    mount(host, svg);
+  }
+  function table(cols, rows, opt) { opt = opt || {}; var h = '<div class="tbl-wrap"' + (opt.maxH ? ' style="max-height:' + opt.maxH + 'px"' : '') + '><table><thead><tr>' + cols.map(function (c) { return '<th class="' + (c.n ? 'n' : '') + '">' + esc(c.t) + '</th>'; }).join('') + '</tr></thead><tbody>'; if (!rows.length) h += '<tr><td colspan="' + cols.length + '" class="empty">해당 자료가 없습니다.</td></tr>'; rows.forEach(function (r) { h += '<tr>' + cols.map(function (c, i) { return '<td class="' + (c.n ? 'n' : '') + '">' + (c.raw ? r[i] : esc(r[i])) + '</td>'; }).join('') + '</tr>'; }); return h + '</tbody></table></div>'; }
+  function more(html, label) { return '<details class="more"><summary>' + esc(label || '표로 보기') + '</summary>' + html + '</details>'; }
+  function card(host, title, cap, opt) { opt = opt || {}; var c = el('div', { class: 'card' + (opt.click ? ' click' : '') }); c.innerHTML = '<h4>' + title + '</h4>' + (cap ? '<p class="cap">' + cap + '</p>' : ''); if (opt.click) { c.tabIndex = 0; c.setAttribute('role', 'button'); c.addEventListener('click', opt.click); c.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); opt.click(); } }); } host.appendChild(c); return c; }
+  function grid(host, cls) { var g = el('div', { class: 'grid ' + (cls || '') }); host.appendChild(g); return g; }
+  function basis(t) { return '<p class="basis">기준: ' + t + '</p>'; }
+
+  // ── 상세 창(카드 클릭) ──
+  var dlg = $('#dlg');
+  function openDetail(title, html) { $('#dlgT').textContent = title; $('#dlgB').innerHTML = html; if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); }
+  $('#dlgX').addEventListener('click', function () { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg && dlg.close) dlg.close(); });
+  function kvTable(rows) { return table([{ t: '항목' }, { t: '내용' }], rows); }
+
+  // ── 상태·헤더 ──
+  function setStat(kind, html) { $('#stat').innerHTML = html; }
+  function showState(title, body, actions, spin) { $('#tabs').innerHTML = ''; $('#main').innerHTML = '<div class="state">' + (spin ? '<div class="spin" aria-hidden="true"></div>' : '') + '<h2>' + title + '</h2><p>' + body + '</p>' + (actions || '') + '</div>'; }
+
+  // ── 페이지 ──
+  var PAGES = [['home', '종합'], ['sales', '매출 분석'], ['notice', '공고·낙찰'], ['firm', '시공사 통합'], ['ops', '운영 KPI'], ['data', '데이터 검증'], ['all', '전체 데이터 조회']];
+  var secs = {}, done = {};
+  function go(p) { if (!secs[p]) p = 'home'; [].forEach.call($('#tabs').children, function (b) { b.setAttribute('aria-selected', b.getAttribute('data-p') === p ? 'true' : 'false'); }); for (var k in secs) secs[k].classList.toggle('on', k === p); if (!done[p]) { done[p] = 1; RENDER[p](secs[p]); } store('b2bdash.tab', p); window.scrollTo(0, 0); }
+  var RENDER = {};
+  var Yrs = ['2022', '2023', '2024', '2025', '2026'];
+
+  function head(host, title, desc) { add(host, '<div class="ph"><div><h2>' + title + '</h2>' + (desc ? '<p>' + desc + '</p>' : '') + '</div></div>'); }
+  function kpiCard(host, o) { var c = card(host, '', '', { click: o.click }); c.classList.add('kpi'); c.innerHTML = '<div class="k"><span>' + esc(o.k) + '</span>' + badge(o.st) + '</div><div class="v' + (o.vcls ? ' ' + o.vcls : '') + '">' + o.v + '</div><div class="d">' + o.d + '</div>' + (o.click ? '<div class="more">자세히 보기 ›</div>' : ''); return c; }
+
+  // 계산 도우미(필터·시험용으로 공개)
+  function salesRange(from, to) { var o = { net: 0, mat: 0, main: 0, u: 0, p: 0, e: 0, other: 0, review: 0, unc: 0, nonmat: 0, rows: 0, months: 0, mainIncomplete: false }; D.salesMonth.forEach(function (m) { if (m.m < from || m.m > to) return; o.months++; o.net += m.net; o.rows += m.rows; o.nonmat += m.cat.nonmat; o.main += m.cat.main; o.u += m.cat.u; o.p += m.cat.p; o.e += m.cat.e; o.other += m.cat.other; o.review += m.cat.review; o.unc += m.cat.unc; if (!m.inRange) o.mainIncomplete = true; }); o.mat = o.net - o.nonmat; return o; }
+  function shiftM(m, dy) { return (+m.slice(0, 4) + dy) + m.slice(4); }
+  function noticeRange(y1, y2, g, pm) { pm = pm || 'pat'; var o = { n: 0, pat: 0, cand: 0, pour: 0, award: 0, awardNoFirm: 0, other: 0, fail: 0, cancel: 0, invalid: 0, checking: 0, open: 0, regroup: 0, amt: 0, adopt: 0, byY: {}, byG: {} }; D.noticeCube.forEach(function (c) { if (c.y < y1 || c.y > y2) return; if (g && c.g !== g) return; if (c.p === 'pat') o.pat += c.n; else o.cand += c.n; if (pm !== 'all' && c.p !== pm) return; o.pour += c.n; ['n', 'award', 'awardNoFirm', 'other', 'fail', 'cancel', 'invalid', 'checking', 'open', 'regroup', 'amt', 'adopt'].forEach(function (k) { o[k] += c[k]; }); var yy = o.byY[c.y] = o.byY[c.y] || { pour: 0, award: 0, other: 0, fail: 0, cancel: 0, invalid: 0, checking: 0, open: 0, awardNoFirm: 0 }; yy.pour += c.n; ['award', 'other', 'fail', 'cancel', 'invalid', 'checking', 'open', 'awardNoFirm'].forEach(function (k) { yy[k] += c[k]; }); var gg = o.byG[c.g] = o.byG[c.g] || { pour: 0, award: 0, other: 0 }; gg.pour += c.n; gg.award += c.award; gg.other += c.other; }); return o; }
+  // 공고 목록 3분류 — won: 낙찰업체가 확인된 공고(낙찰·타공법·무효·해지), unk: 낙찰업체 미확인(유찰·취소·수정·대기·확인 중·자료 미확보)
+  var WON = 'AOVT', UNK = 'FCMWKGN';
+  function noticeRows(y1, y2, g, pm, mode) { var gi = g ? D.kindGroups.indexOf(g) : -1; return D.noticeList.filter(function (r) { var y = r[0].slice(0, 4); if (y < y1 || y > y2) return false; if (gi >= 0 && r[2] !== gi) return false; if (pm === 'pat' && !r[3]) return false; if (pm === 'cand' && r[3]) return false; if (mode === 'won') return WON.indexOf(r[5]) >= 0; if (mode === 'unk') return UNK.indexOf(r[5]) >= 0; return true; }); }
+  function nStat(c) { return (D.noticeStatus || {})[c] || c; }
+  // 운영 KPI 기간 계산 — 서버가 월 같은 기간에 시작한 대상(업체는 한 달에만 속함)로 보낸 값을 골라 더함
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function kpSum(K, from, to) { var o = { months: [] }; K.cols.forEach(function (c) { o[c] = 0; }); K.rows.forEach(function (r) { if (r[0] < from || r[0] > to) return; o.months.push(r[0]); K.cols.forEach(function (c, i) { o[c] += r[i + 1]; }); }); return o; }
+  function periodRange(unit, key) { if (unit === 'all') return ['0000-00', '9999-99', '전체 기간']; if (unit === 'year') return [key + '-01', key + '-12', key + '년']; if (unit === 'q') { var y = key.slice(0, 4), q = +key.slice(-1); return [y + '-' + pad2(q * 3 - 2), y + '-' + pad2(q * 3), y + '년 ' + q + '분기']; } return [key, key, key.slice(0, 4) + '년 ' + (+key.slice(5)) + '월']; }
+  function kpiEval(key, from, to) { var KP = D.kpiPeriod; if (key === 'reach') { var a = kpSum({ cols: ['all', 'mou'], rows: KP.reach.rows }, from, to); return { status: '산출 대기', aux: a }; }
+    var K = KP[key], s = kpSum(K, from, to), okM = K.rows.filter(function (r) { return r[0] >= from && r[0] <= to && r[1] > 0; }).map(function (r) { return r[0]; });
+    return { s: s, rate: s.ok ? pct(s.okHit, s.ok) : null, obsRate: s.obs ? pct(s.obsHit, s.obs) : null, strict: key === 'reuse' && s.sOk ? pct(s.sHit, s.sOk) : null, status: s.ok ? '참고값' : s.obs ? '잠정' : '산출 대기', okFrom: okM[0] || '', okTo: okM[okM.length - 1] || '' }; }
+  window.__b2b = { salesRange: salesRange, noticeRange: noticeRange, noticeRows: noticeRows, kpiEval: kpiEval, periodRange: periodRange, data: function () { return D; } };
+  var TKN = [['newL3', '① 신규 협약업체 L3 활성화율'], ['reuse', '② 다른 현장 재이용률'], ['reach', '③ L3 도달률']];
+  function kpiYearsTable(key) { var K = D.kpiPeriod[key]; var ys = {}; K.rows.forEach(function (r) { ys[r[0].slice(0, 4)] = 1; }); var qs = {}; K.rows.forEach(function (r) { if (r[0] >= '2022-01') qs[r[0].slice(0, 4) + '-Q' + Math.ceil(+r[0].slice(5) / 3)] = 1; });
+    function row(lbl, from, to) { var e = kpiEval(key, from, to), s = e.s; return [lbl, e.rate === null ? '—' : e.rate + '%', nf(s.okHit) + ' / ' + nf(s.ok), s.obs ? nf(s.obsHit) + ' / ' + nf(s.obs) + (e.obsRate === null ? '' : ' (' + e.obsRate + '%)') : '—', nf(s.pre)].concat(key === 'reuse' ? [e.strict === null ? '—' : e.strict + '% (' + nf(s.sHit) + '/' + nf(s.sOk) + ')', nf(s.nosite)] : []).concat([badge(e.status)]); }
+    var cols = [{ t: '기간' }, { t: '참고값', n: 1 }, { t: '해당 건수 / 전체 대상', n: 1 }, { t: '관측 중(잠정)', n: 1 }, { t: '기록 시작 전', n: 1 }].concat(key === 'reuse' ? [{ t: '주소 검증 기준', n: 1 }, { t: '첫 이용 현장 미식별', n: 1 }] : []).concat([{ t: '상태', raw: 1 }]);
+    return { year: table(cols, Object.keys(ys).sort().map(function (y) { return row(y + '년', y + '-01', y + '-12'); })), q: table(cols, Object.keys(qs).sort().map(function (q) { var y = q.slice(0, 4), n = +q.slice(-1); return row(q.replace('-', ' '), y + '-' + pad2(n * 3 - 2), y + '-' + pad2(n * 3)); }), { maxH: 420 }) }; }
+  function kpiWhy() { var KP = D.kpiPeriod, a = KP.newL3.meta, b = KP.reuse.meta, mx = KP.newL3.rows.reduce(function (m, r) { var t = r[1] + r[3] + r[5]; return t > m[1] ? [r[0], t] : m; }, ['', 0]); var SV = D.serviceYear;
+    openDetail('왜 이 기간부터 계산되나요?', '<p>KPI마다 필요한 기록이 생긴 시점이 다릅니다. 아래 날짜는 통합시트 값으로 매번 다시 계산합니다(기준일 ' + esc(KP.asOf) + ').</p>' +
+      table([{ t: '항목' }, { t: '① 신규 협약업체 L3 활성화율' }, { t: '② 다른 현장 재이용률' }, { t: '③ L3 도달률' }], [
+        ['데이터가 존재하기 시작한 날', esc(a.dataStart), esc(b.dataStart), 'L2 영업보고 ' + nf(KP.reach.l2Rows) + '행(자료 없음)'],
+        ['업체·현장 식별이 가능한 첫 날', '협약 코드 업체로 연결된 첫 L3 ' + esc(a.idStart), '업체 ' + esc(b.idStart) + ' · 현장ID ' + esc(b.siteStart) + ' · 주소 검증 현장 ' + esc(b.addrStart), '—'],
+        ['필요한 관측 기간', '협약일부터 365일', '첫 L3 이용부터 60일', '—'],
+        ['관측이 충족되는 첫 기간', esc(a.firstCalc) + ' 협약분', esc(b.firstCalc) + ' 첫 이용분', '없음'],
+        ['참고값을 낼 수 있는 가장 최근 기간', esc(a.lastCalc) + ' 협약분(이후는 1년이 안 지나 잠정)', esc(b.lastCalc) + ' 첫 이용분(이후는 60일이 안 지나 잠정)', '없음 — 기간을 바꿔도 해결되지 않음'],
+        ['빠지는 업체', '협약일 미확보 ' + nf(KP.newL3.undated) + '곳 · L3 기록 시작 전 협약 · 관측 중', 'L3 기록 시작 전 첫 이용 · 첫 이용 현장 미식별 · 관측 중', '—'],
+        ['공식 KPI 확정', '보류 — 협약일 미확보, 업체 연결이 이름 추정', '보류 — 현장ID 명칭 후보 포함, 업체 연결이 이름 추정', '계산에 필요한 자료 부족 — L2 원천 필요']
+      ]) +
+      '<h4 style="margin:16px 0 6px">왜 ' + esc(KP.cover.slice(0, 7)) + '부터인가</h4><ul class="list"><li>L3 기록 3종의 시작일: 기술자문 ' + esc(KP.l3Min['기술자문'] || '') + ' · 공법설명회 ' + esc(KP.l3Min['공법설명회(PT)'] || '') + ' · 컨설팅 ' + esc(KP.l3Min['컨설팅내역서'] || '') + '. 세 가지가 모두 기록되기 시작한 날(' + esc(KP.cover) + ') 이후라야 이용 여부를 빠짐없이 볼 수 있습니다.</li><li>그 전 기록은 협약 코드 업체로 연결된 L3가 없습니다(첫 연결 ' + esc(a.idStart) + ').</li><li>2023년 초에 처음 이용한 것으로 보이는 업체 중 일부는 실제로는 그 전부터 이용했을 수 있어 ②의 2023년 값은 신뢰가 낮습니다.</li></ul>' +
+      '<h4 style="margin:16px 0 6px">기간에 따라 값이 달라지는 이유</h4><ul class="list"><li>협약이 한 달에 몰린 때가 있습니다(' + esc(mx[0]) + ' 협약 ' + nf(mx[1]) + '곳). 그 달 업체의 이용 여부가 그해 값을 크게 좌우합니다.</li><li>L3 기록 건수가 해마다 늘었습니다(' + SV.map(function (y) { return y.year + ' ' + nf(y.total); }).join(' · ') + '건).</li><li>최근 기간은 관측이 끝나지 않아 "잠정"(지금까지 이용한 업체만 센 하한값)으로 따로 보여 줍니다.</li><li>분기·월 단위는 분모가 몇 곳뿐인 경우가 많아 값이 크게 흔들립니다. 분모를 함께 보세요.</li></ul>'); }
+  function trackerTitle(key) { var e = kpiEval(key, '0000-00', '9999-99'); return key === 'reach' ? 'L2 영업보고 자료 없음 — 계산에 필요한 자료 부족' : '전체 산출 가능 기간 참고 ' + (e.rate === null ? '—' : e.rate + '%') + ' (' + e.s.okHit + '/' + e.s.ok + ') · 공식 KPI 아님 — 목표 달성 판정 안 함'; }
+  function trackerDetail(key, title) { var t = D.trackerKpi[key], KP = D.kpiPeriod;
+    if (key === 'reach') { var jl = KP.reach.journeyL2, jt = Object.keys(jl).map(function (k) { return k + ' ' + nf(jl[k]); }).join(' · ');
+      openDetail(title + ' — 산출 근거', '<p>' + badge('산출 대기') + ' L2 영업보고 원천이 없어 기간을 바꿔도 계산되지 않습니다. 0%가 아니라 "자료 없음"입니다.</p>' + kvTable([['정의', t.def], ['L2 영업보고', '보존_15_L2확정 ' + nf(KP.reach.l2Rows) + '행'], ['여정 탭의 L2 표기', '동기화_②_여정_최종의 단계 L2 ' + jt + '행은 구 정의(기술자문 문의·샘플 요청)라 현재 기준 L2 영업보고가 아닙니다(현재 기준으로는 L3·L1).'], ['부족한 필드', 'L2 영업보고(방문·상담) 원천: 업체·일자·현장 · 대상 업체 계산 대상 정의'], ['보조지표', 'L3 최초 이용 대상 수(업체 확인 중) — 관리주체·개인·내부 표기·설계감리 등이 포함돼 시공사 수·직접 진입 수가 아닙니다. 운영 KPI 화면에서 기간별로 표시'], ['기준·목표·도전', t.base + '% · ' + t.target + '% · ' + t.challenge + '% (목표치 — 달성 판정 안 함)']])); return; }
+    var T2 = kpiYearsTable(key), K = KP[key];
+    var rows = [['정의', key === 'newL3' ? t.def : '분자: 첫 L3 이용 후 1~60일 안에 다른 현장ID로 L3를 요청한 협약 코드 업체(같은 아파트명·주소면 같은 현장으로 보고 제외) / 분모: 첫 L3 이용 후 60일 관측이 끝난 협약 코드 업체'], ['상태', '참고값 — 공식 정의·계산 대상 확정 전(목표 달성 판정 안 함)'], ['신뢰 수준', K.conf], ['원천', key === 'newL3' ? '보존_02 업체마스터(협약 코드·협약일) · 보존_12 L3서비스(L3요청집계포함=TRUE)' : '보존_12 L3서비스 현장ID·현장식별등급·아파트명·주소 · 협약 코드 업체만']];
+    if (key === 'newL3') rows.push(['이전 참고값', '협약 ' + t.ref.from + '~' + t.ref.to + ' 같은 기간에 시작한 대상 ' + nf(t.ref.num) + '/' + nf(t.ref.den) + ' = ' + t.ref.rate + '% (같은 정의, 기간만 다름)']);
+    if (key === 'reuse') { var dc = t.decomp || {}; rows.push(['이전 참고값과 차이', '이전 ' + t.ref.rate + '%(' + nf(t.ref.num) + '/' + nf(t.ref.den) + ')은 ' + t.ref.from + '~' + t.ref.to + ' 동안의 "아무 L3 요청"을 기준으로 셌습니다. 이미 여러 현장을 이용 중인 업체가 많이 들어가 값이 높게 나옵니다. 위 표는 요청하신 정의대로 "첫 이용" 기준입니다.']);
+      rows.push(['80.6% vs 75.8% 차이', '같은 기간·같은 방식에서 주소 검증 기준으로 바꾸면: 둘 다 재사용 ' + nf(dc.both) + '곳 · 기준 요청이 모두 주소 미검증이라 분모에서 빠짐 ' + nf(dc.baseNotAddr + dc.denOnlyDrop) + '곳(그중 재사용 ' + nf(dc.baseNotAddr) + ') · 재사용 현장이 주소 미검증(명칭 후보)이라 분자에서 빠짐 ' + nf(dc.reuseNotAddr) + '곳 · 다른 현장ID지만 같은 아파트명·주소(같은 현장 의심) ' + nf(dc.sameSuspect) + '곳']); }
+    rows.push(['기준·목표·도전', t.base + '% · ' + t.target + '% · ' + t.challenge + '% (목표치 — 달성 판정 안 함)']);
+    openDetail(title + ' — 기간별 산출 근거', '<p>' + badge('참고값') + ' 관측이 끝난 기간만 참고값으로, 관측 중인 기간은 잠정(하한값)으로 따로 셉니다.</p>' + kvTable(rows) + '<h4 style="margin:16px 0 6px">연도별</h4>' + T2.year + more(T2.q, '분기별 보기')); }
+
+  // 낙찰 시공사 주요 자재 구매율 — 사업자번호로 같은 업체임이 확인된 범위(구매 미확인 ≠ 미구매), 업체명 후보는 참고로만
+  function rateCard(host) { var K = (D.kpi4 || {}).rate, A = D.extra.awardMain; if (!K) return; var c = card(host, '낙찰 시공사 주요 자재 구매율 ' + badge('검증 중'), '공사 낙찰업체 중 우리 우레탄·페인트·에폭시 등 주요 자재를 구매한 업체가 얼마나 되는지 보여줍니다.', { click: rateDetail }); c.style.marginTop = '16px';
+    add(c, '<div class="tiles"><div class="tile"><div class="k">구매율(사업자번호 확인 범위)</div><div class="v">' + (K.rate === null ? '계산 불가' : K.rate + '%') + '</div><div class="d">같은 업체로 확인된 낙찰 시공사 ' + nf(K.firms) + '곳 중 ' + nf(K.buyers) + '곳이 주요 자재를 샀습니다.</div></div><div class="tile"><div class="k">구매한 주요 자재 금액</div><div class="v">' + won(K.mainNet) + '</div><div class="d">위 ' + nf(K.buyers) + '곳이 산 주요 자재 합계(원장 ' + esc(D.ledger.minDate.slice(0, 4)) + '~' + esc(D.ledger.maxDate) + ')입니다.</div></div><div class="tile"><div class="k">' + badge('참고') + ' 업체명 기준 후보</div><div class="v">' + (pct(A.mainBuyers, A.firms) === null ? '—' : pct(A.mainBuyers, A.firms) + '%') + '</div><div class="d">보관 낙찰자료 기준 낙찰업체 ' + nf(A.firms) + '곳을 이름으로 연결한 결과 그중 ' + nf(A.mainBuyers) + '곳(' + won(A.mainNet) + '). 같은 업체인지 확인 전이라 참고값입니다.</div></div><div class="tile"><div class="k">' + badge('미확정') + ' 낙찰 이후 구매율</div><div class="v" style="font-size:18px">자료 부족</div><div class="d">실제 낙찰일 기록이 없어 낙찰 뒤에 샀는지는 판단할 수 없습니다.</div></div></div><p class="note">이 비율은 낙찰 시공사가 우리 주요 자재를 구매한 비율이며, 해당 낙찰 현장에 POUR 공법을 적용한 비율이 아닙니다. 나머지 ' + nf(K.unverified) + '곳은 "구매 미확인"(안 샀다고 확정한 것 아님)입니다. 누르면 업체 목록과 기준을 볼 수 있습니다.</p>'); }
+  function rateDetail() { var K = D.kpi4.rate, A = D.extra.awardMain; openDetail('낙찰 시공사 주요 자재 구매율 — 계산 기준', '<p>' + badge('검증 중') + ' 구매율 = 주요 자재 구매가 확인된 낙찰 시공사 수 ÷ 사업자번호로 확인된 낙찰 시공사 수 × 100</p>' + kvTable([['집계 기간', '공고·낙찰 2022~' + esc(D.asOf.slice(0, 4)) + ' · 매출 원장 ' + esc(D.ledger.minDate) + '~' + esc(D.ledger.maxDate) + ' · 주요 자재 분류는 2024년부터'], ['전체 대상(분모)', nf(K.firms) + '곳 — 낙찰 검증 대상 ' + nf(K.targets) + '건 중 K-apt 원문에서 낙찰 사업자번호를 찾은 업체(번호 단위). 번호를 못 찾은 ' + nf(K.noBiz) + '건 제외'], ['해당 건수(분자)', nf(K.buyers) + '곳 — 그 사업자번호가 검증된 구매계정과 같고 주요 자재 구매가 있는 업체'], ['구매 미확인', nf(K.unverified) + '곳 — 검증된 구매계정 목록에 없음(미구매 확정 아님)' + (K.ledgerCodeMain ? ' · 그중 ' + nf(K.ledgerCodeMain) + '곳은 원장 등록코드로는 구매 후보' : '')], ['업체명 기준 후보(참고)', nf(A.mainBuyers) + ' / ' + nf(A.firms) + '곳 · 명부 사업자번호 있음 ' + nf(A.withBiz) + '곳 · 연결 안 됨 ' + nf(A.firms - A.withBiz) + '곳 — 공식 수치에 넣지 않음'], ['미확정 사유', '실제 POUR 채택(계약·시공) 증빙 0건 · 실제 낙찰일 0건 → 낙찰 현장 사용 여부와 낙찰 이후 구매 여부는 판단 불가']]) + '<h4 style="margin:14px 0 6px">주요 자재 구매가 확인된 낙찰 시공사(' + nf(K.list.length) + '곳)</h4>' + table([{ t: '#', n: 1 }, { t: '업체(낙찰 표기)' }, { t: '주요 자재 구매', n: 1 }], K.list.map(function (x, i) { return [i + 1, x[0], won(x[1])]; }), { maxH: 380 })); }
+  // ① 종합
+  RENDER.home = function (s) {
+    var SY = D.salesYear, NY = D.noticeYear, y26 = SY[4], n26 = NY[4], n25 = NY[3], sv = D.serviceYear, K4 = D.kpi4, TK = D.trackerKpi;
+    head(s, '종합 대시보드', '팀장님 핵심 KPI 4개와 운영 KPI 3개. 카드를 누르면 계산식·근거가 나옵니다.');
+    add(s, '<h3 class="sec">팀장님 핵심 KPI</h3>'); var g = grid(s, 'g4');
+    kpiCard(g, { k: '① POUR 공고·낙찰 (2026)', st: '참고', v: nf(n26.pour) + '<span style="font-size:18px;font-weight:700"> 건</span>', d: 'POUR 특허번호 기재 공고(후보 ' + nf(n26.cand) + '건 별도) · 낙찰업체 확인 ' + nf(n26.award) + '건<br>같은 기간 공고 ' + pc(n26.ytdYoy) + ' · 실제 채택 확정 ' + badge('증빙 확인 필요'), click: function () { detailKpi1(); } });
+    kpiCard(g, { k: '② 순매출 (2026, ' + D.ytdCut.replace('-', '/') + '까지)', st: '확정', v: eok(y26.net) + '<span style="font-size:18px;font-weight:700">원</span>', d: '전년 같은 기간 ' + eok(SY[3].ytdNet) + '원 대비 ' + pc(y26.ytdYoy), click: function () { detailKpi2(); } });
+    kpiCard(g, { k: '③ 주요 자재 매출 (2026) — 우레탄·페인트·에폭시', st: '확정', v: eok(y26.main) + '<span style="font-size:18px;font-weight:700">원</span>', d: '전체 매출 대비 ' + y26.mainShare + '% · 자재 매출 대비 ' + y26.mainShareMat + '%<br>같은 기간 ' + pc(y26.ytdMainYoy), click: function () { detailKpi3(); } });
+    kpiCard(g, { k: '④ 낙찰 시공사 주요 자재 구매율', st: '미확정', vcls: 'need', v: '증빙 확인 필요', d: '공식 구매율은 계산하지 않습니다.<br>참고: 사업자번호 확인 ' + nf(K4.trackB.erpConfirmed) + '곳 · 이름 연결 후보 ' + nf(K4.trackA.erpMain) + '곳', click: function () { go('notice'); setTimeout(function () { var t = document.getElementById('kpi4'); if (t) t.scrollIntoView(); }, 50); } });
+    rateCard(s);
+    add(s, '<h3 class="sec">운영 KPI (업무트래커)</h3>'); var g2 = grid(s, 'g3');
+    var HP = periodRange('year', '2025'); TKN.forEach(function (x) { var t = TK[x[0]], e = kpiEval(x[0], HP[0], HP[1]), has = e.rate !== null && e.rate !== undefined; var kc = kpiCard(g2, { k: x[1], st: e.status, vcls: has ? '' : 'na', v: has ? e.rate + '%' : '계산에 필요한 자료 부족', d: (has ? nf(e.s.okHit) + ' / ' + nf(e.s.ok) + '곳 · ' + HP[2] + ' ' + (x[0] === 'newL3' ? '협약' : '첫 이용') + '(관측 완료분)' + (e.s.obs ? ' · 관측 중 ' + nf(e.s.obs) + '곳 별도' : '') + '<br>' : 'L2 영업보고 자료 없음 · 보조지표: ' + HP[2] + ' L3 최초 이용 대상 ' + nf(e.aux.all) + '곳(업체 확인 중)<br>') + (has ? '참고값 · ' : '') + '목표 달성 판정 안 함<div class="tgt"><span>기준 ' + t.base + '%</span><span>목표 ' + t.target + '%</span><span>도전 ' + t.challenge + '%</span></div>', click: function () { trackerDetail(x[0], x[1]); } }); kc.title = trackerTitle(x[0]); });
+    add(s, '<h3 class="sec">매출 및 공고 추이</h3>'); var g3 = grid(s, 'g2');
+    var c1 = card(g3, '연도별 순매출', '01_ERP최신원장 순공급가액(부가세 제외) · 단위 억원 · 2026은 ' + D.ytdCut.replace('-', '/') + '까지');
+    bars(c1, Yrs, [{ name: '순매출', c: '--s1', vals: SY.map(function (y) { return y.net; }) }], { fmt: won, tfmt: function (v) { return eok(v, 0); }, lfmt: function (v) { return eok(v, 0); }, label: '연도별 순매출', extra: function (i) { return '<div>같은 기간 증감 ' + pcT(SY[i].ytdYoy) + '</div>'; } });
+    add(c1, more(table([{ t: '연도' }, { t: '순매출', n: 1 }, { t: '같은 기간(1/1~' + D.ytdCut.replace('-', '/') + ')', n: 1 }, { t: '같은 기간 증감', n: 1, raw: 1 }], SY.map(function (y) { return [y.year, wonFull(y.net), wonFull(y.ytdNet), pc(y.ytdYoy)]; }))));
+    var c2 = card(g3, '연도별 POUR 공고·낙찰', '2022~2025 보존_08(공고ID 중복 제거) · 2026 동기화_③(30분 자동) · 단위 건');
+    var NS = [{ name: 'POUR 특허번호 기재 공고', c: '--s1', vals: NY.map(function (y) { return y.pour; }) }, { name: '낙찰업체 확인', c: '--s3', vals: NY.map(function (y) { return y.award; }) }];
+    add(c2, legend(NS)); bars(c2, Yrs, NS, { labels: 'all', label: '연도별 POUR 공고와 낙찰' });
+    add(c2, '<p class="note">실제 POUR 채택 확정: 모든 연도 <b>증빙 확인 필요</b>(채택 계약·시공 증빙 0건) — 확정 실적으로 세지 않았습니다.</p>');
+    add(s, '<h3 class="sec">이번 기간 변화 <span style="font-weight:500;font-size:14px;color:var(--ink-3)">(2026년 1/1~기준일 vs 2025년 같은 기간)</span></h3>');
+    var ch = card(s, '', ''); ch.innerHTML = table([{ t: '지표' }, { t: '2025 같은 기간', n: 1 }, { t: '2026', n: 1 }, { t: '증감', n: 1, raw: 1 }, { t: '상태', raw: 1 }], [
+      ['순매출(1/1~' + D.ytdCut.replace('-', '/') + ')', won(SY[3].ytdNet), won(y26.ytdNet), pc(y26.ytdYoy), badge('확정')],
+      ['주요 자재 매출', won(SY[3].ytdMain), won(y26.ytdMain), pc(y26.ytdMainYoy), badge('확정')],
+      ['POUR 특허번호 기재 공고(1/1~' + D.noticeCut.replace('-', '/') + ')', nf(n25.ytdPour) + '건', nf(n26.ytdPour) + '건', pc(n26.ytdYoy), badge('참고')],
+      ['POUR 낙찰업체 확인 공고', nf(n25.ytdAward) + '건', nf(n26.ytdAward) + '건', pc(pct(n26.ytdAward - n25.ytdAward, n25.ytdAward)), badge('참고')],
+      ['L3 기술지원 요청(1/1~' + D.noticeCut.replace('-', '/') + ')', nf(sv[3].ytd) + '건', nf(sv[4].ytd) + '건', pc(pct(sv[4].ytd - sv[3].ytd, sv[3].ytd)), badge('참고')]
+    ]) + '<p class="note">최근 7일 자동 동기화 변화: 신규 ' + nf(D.sync.changes7.nw) + '행 · 수정 ' + nf(D.sync.changes7.md) + '행 · 원천삭제 ' + nf(D.sync.changes7.del) + '행(첫 적재 포함)</p>';
+    add(s, '<h3 class="sec">주요 확인 필요 사항</h3>');
+    var iss = card(s, '', ''); var items = [];
+    if (D.sync.failedLatest && D.sync.failedLatest.length) items.push(['red', '마지막 자동 동기화에서 실패한 탭: ' + D.sync.failedLatest.join(', '), 'data']);
+    items.push(['', 'KPI④ 구매율 — 실제 POUR 채택(계약·시공) 증빙과 실제 낙찰일이 없어 공식 비율을 낼 수 없습니다.', 'notice']);
+    items.push(['', 'L2 영업보고 원천 미확보 — L3 도달률(L2 경유) 계산에 필요한 자료 부족. 0건은 "영업 없음"이 아니라 "자료 없음"입니다.', 'ops']);
+    items.push(['', '협약업체 352곳 중 ' + nf(D.mou.b2b - D.mou.dated) + '곳 협약일 미확보 — 신규 협약업체 활성화율 계산에서 빠집니다(참고값으로만 표시).', 'ops']);
+    items.push(['', 'ERP 거래처 중 업체 마스터와 연결 안 된 등록코드 ' + nf(D.verify.unlinked.erpCodesNotInMaster) + '개, 등록코드 없는 거래처 ' + nf(D.verify.unlinked.erpVendorsNoCode) + '곳.', 'data']);
+    items.push(['', '2026 POUR 공고 중 낙찰업체 미기재 ' + nf(D.verify.unlinked.live2026NoFirm) + '건, 동명 복수 ' + nf(D.verify.unlinked.live2026SameName) + '건.', 'data']);
+    iss.innerHTML = '<ul class="list">' + items.map(function (x) { return '<li><span>' + (x[0] === 'red' ? '⚠️ ' : '• ') + esc(x[1]) + '</span><button class="btn go" type="button" data-go="' + x[2] + '">보기</button></li>'; }).join('') + '</ul>';
+    iss.addEventListener('click', function (e) { var b = e.target.closest('[data-go]'); if (b) go(b.getAttribute('data-go')); });
+    add(s, '<h3 class="sec">데이터 기준</h3>');
+    var bc = card(s, '', ''); bc.innerHTML = table([{ t: '항목' }, { t: '값' }], [
+      ['매출 원장 기간', D.ledger.minDate + ' ~ ' + D.ledger.maxDate + ' (01_ERP최신원장 ' + nf(D.ledger.rows) + '행)'],
+      ['공고·L3 기준일', D.asOf + '(미래 날짜 공고 ' + nf(D.futureNoticesExcluded) + '건 제외)'],
+      ['마지막 자동 동기화 성공', R.sync.lastSuccess || D.sync.lastSuccess || '기록 없음'],
+      ['마지막 데이터 변경', R.sync.lastChange || D.sync.lastChange || '기록 없음'],
+      ['KPI 계산 시각', R.meta.computedAt + (R.status === 'stale' ? ' — 이전 계산값' : '')]
+    ]);
+  };
+  function detailKpi1() { var NY = D.noticeYear, MK = D.market; openDetail('① POUR 공고·낙찰 추이 — 산식과 근거', '<p>' + badge('참고') + ' 원천 표기 기준 관측값입니다. 공고에 POUR 특허번호가 적혀 있어도 실제 채택으로 보지 않습니다.</p>' + table([{ t: '연도' }, { t: '전체 공고', n: 1 }, { t: 'POUR 특허번호 기재', n: 1 }, { t: 'POUR 관련 후보', n: 1 }, { t: '낙찰업체 확인', n: 1 }, { t: '실제 채택 확정', n: 1 }], NY.map(function (y) { var m = MK[y.year]; return [y.year, m ? nf(m.total) : '자료 없음', nf(y.pour), nf(y.cand), nf(y.award), '증빙 확인 필요']; })) + kvTable([['POUR 특허번호 기재', '원천 특허 칸(2022~2025 보존_08 특허원문 · 2026 동기화_③ 특허번호)에 넷폼알앤디 특허번호(동기화_③_특허 명부 ' + nf(D.patentRef.own) + '건)가 적힌 공고. 공고ID와 현장명+공고일+공사명으로 중복 제거'], ['POUR 관련 후보', 'POUR 공고문 목록에 있지만 특허번호가 없거나(POUR공법 표기 등) 다른 회사 특허번호만 있는 공고 — 확정 건수에서 제외'], ['낙찰업체 확인', '특허번호 기재 공고 중 상태 "낙찰" + 낙찰업체명 있음(타공법 낙찰 제외)'], ['전체 공고', '시장 전체 공고문 목록이 있는 2025(원본6_17 사본)·2026(동기화_③ 전체)만. 2022~2024 자료 없음'], ['실제 채택', '보존_09 POUR계약확정·동기화 "_⑤POUR채택확정" 모두 확정 0 → 증빙 확인 필요']])); }
+  function detailKpi2() { var SY = D.salesYear; openDetail('② 매출 추이 — 산식과 근거', '<p>' + badge('확정') + ' 01_ERP최신원장 공급가액 합계(부가세 제외, 반품 음수 포함). 다른 원장·사본·요약 탭은 더하지 않습니다.</p>' + table([{ t: '연도' }, { t: '순매출', n: 1 }, { t: '행', n: 1 }, { t: '전년 대비', n: 1, raw: 1 }, { t: '같은 기간 증감', n: 1, raw: 1 }], SY.map(function (y) { return [y.year, wonFull(y.net), nf(y.rows), y.year === '2026' ? '<span class="empty">진행 중 — 같은 기간만 비교</span>' : pc(y.yoy), pc(y.ytdYoy)]; })) + '<p class="note">같은 기간 = 각 연도 1/1 ~ ' + D.ytdCut.replace('-', '/') + '(원장 마지막 거래일). 원장 합계 ' + wonFull(D.ledger.total) + ' · 행 ' + nf(D.ledger.rows) + ' · 고유 ID ' + nf(D.ledger.uniqueIds) + '.</p>'); }
+  function detailKpi3() { var SY = D.salesYear.slice(2); openDetail('③ 주요 자재 매출 — 산식과 근거', '<p>' + badge('확정') + ' 원장 "메인여부=TRUE" 행(확정 분류 범위 2024년~). 2022·2023은 분류 범위 밖이라 0원이 아니라 "산출 불가"입니다.</p>' + table([{ t: '연도' }, { t: '우레탄', n: 1 }, { t: '페인트·재도장', n: 1 }, { t: '에폭시', n: 1 }, { t: '메인 합계', n: 1 }, { t: '전체 대비', n: 1 }, { t: '자재 대비', n: 1 }, { t: '구매 거래처', n: 1 }], SY.map(function (y) { return [y.year, won(y.mainG.우레탄), won(y.mainG.재도장), won(y.mainG.에폭시), wonFull(y.main), y.mainShare + '%', y.mainShareMat + '%', nf(y.mainVendors)]; })) + kvTable([['전체 매출 대비', '주요 자재 ÷ 전체 순매출'], ['자재 매출 대비', '주요 자재 ÷ (전체 순매출 − 비자재 품목: ' + D.nonMaterialItems.join(', ') + ')'], ['미분류', '분류표에 없는 품목(분류상태 "미분류")은 별도 표시 — 매출 분석 화면']])); }
+
+  // ② 매출 분석
+  RENDER.sales = function (s) {
+    head(s, '매출 분석', '01_ERP최신원장(이카운트 판매현황) 기준 · 금액은 공급가액(부가세 제외) · 반품은 음수로 포함');
+    var months = D.salesMonth.map(function (m) { return m.m; }); var lastM = months[months.length - 1];
+    var f = el('div', { class: 'filters' }); s.appendChild(f);
+    f.innerHTML = '<label>시작 월<select id="sFrom">' + months.map(function (m) { return '<option>' + m + '</option>'; }).join('') + '</select></label><label>끝 월<select id="sTo">' + months.map(function (m) { return '<option>' + m + '</option>'; }).join('') + '</select></label><div class="chips" id="sQuick"><button type="button" data-r="ytd">2026 누적</button><button type="button" data-r="2025">2025년</button><button type="button" data-r="12">최근 12개월</button><button type="button" data-r="all">전체</button></div>';
+    var body = el('div'); s.appendChild(body);
+    var sel = { from: lastM.slice(0, 4) + '-01', to: lastM };
+    function setQ(r) { if (r === 'ytd') { sel.from = lastM.slice(0, 4) + '-01'; sel.to = lastM; } else if (r === '2025') { sel.from = '2025-01'; sel.to = '2025-12'; } else if (r === '12') { sel.to = lastM; sel.from = months[Math.max(0, months.length - 12)]; } else { sel.from = months[0]; sel.to = lastM; } $('#sFrom').value = sel.from; $('#sTo').value = sel.to; draw(); }
+    f.addEventListener('change', function () { sel.from = $('#sFrom').value; sel.to = $('#sTo').value; if (sel.from > sel.to) { var t = sel.from; sel.from = sel.to; sel.to = t; } draw(); });
+    $('#sQuick').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setQ(b.getAttribute('data-r')); });
+    function draw() {
+      body.innerHTML = ''; [].forEach.call($('#sQuick').children, function (b) { b.setAttribute('aria-pressed', 'false'); });
+      var cur = salesRange(sel.from, sel.to), prev = salesRange(shiftM(sel.from, -1), shiftM(sel.to, -1));
+      var hasPrev = prev.months === cur.months && prev.months > 0;
+      var t = el('div', { class: 'tiles' }); body.appendChild(t);
+      t.innerHTML = '<div class="tile"><div class="k">순매출</div><div class="v">' + won(cur.net) + '</div><div class="d">' + sel.from + ' ~ ' + sel.to + ' · 전년 같은 월 ' + (hasPrev ? pc(pct(cur.net - prev.net, prev.net)) : '비교 불가') + '</div></div>' +
+        '<div class="tile"><div class="k">자재 매출(비자재 제외)</div><div class="v">' + won(cur.mat) + '</div><div class="d">운반비·배송비 등 ' + won(cur.nonmat) + ' 제외</div></div>' +
+        '<div class="tile"><div class="k">주요 자재 ' + badge('확정') + '</div><div class="v">' + (cur.mainIncomplete ? '<span style="font-size:16px">2024년 이전 포함 — 분류 범위 밖</span>' : won(cur.main)) + '</div><div class="d">' + (cur.mainIncomplete ? '주요 자재는 2024-01 이후로 기간을 고르세요' : '전체 대비 ' + pct(cur.main, cur.net) + '% · 자재 대비 ' + pct(cur.main, cur.mat) + '%') + '</div></div>' +
+        '<div class="tile"><div class="k">미분류·분류 확인 필요</div><div class="v">' + won(cur.unc + cur.review) + '</div><div class="d">미분류 ' + won(cur.unc) + ' · 확인 필요 ' + won(cur.review) + '</div></div>';
+      add(body, '<p class="note">전년 비교는 같은 월 범위끼리입니다(월 단위). 2026년 ' + lastM.slice(5) + '월은 ' + D.ytdCut.replace('-', '/') + '까지만 있으므로 하루 단위 같은 기간 비교는 아래 "같은 기간" 표를 보세요.</p>');
+      var g = grid(body, 'g21'); var c1 = card(g, '월별 순매출', '선택 기간 · 단위 억원 · 주요 자재는 2024-01부터');
+      var ms = D.salesMonth.filter(function (m) { return m.m >= sel.from && m.m <= sel.to; });
+      var LS = [{ name: '전체 순매출', c: '--s1', vals: ms.map(function (m) { return m.net; }) }, { name: '주요 자재', c: '--s2', vals: ms.map(function (m) { return m.inRange ? m.cat.main : null; }) }];
+      add(c1, legend(LS)); lines(c1, ms.map(function (m) { return m.m; }), LS, { area: true, fmt: won, tfmt: function (v) { return eok(v, 1); }, xfmt: function (m) { return m.slice(2).replace('-', '.'); }, label: '월별 순매출', w: 760 });
+      add(c1, more(table([{ t: '월' }, { t: '순매출', n: 1 }, { t: '자재 매출', n: 1 }, { t: '주요 자재', n: 1 }, { t: '원장 행', n: 1 }], ms.slice().reverse().map(function (m) { return [m.m, wonFull(m.net), wonFull(m.net - m.cat.nonmat), m.inRange ? wonFull(m.cat.main) : '분류 범위 밖', nf(m.rows)]; }), { maxH: 380 })));
+      var c2 = card(g, '매출 구성(선택 기간)', '합계 = 순매출 · 서로 겹치지 않음');
+      hbars(c2, [{ name: '페인트·재도장(메인)', v: cur.p, c: '--s1' }, { name: '우레탄(메인)', v: cur.u, c: '--s1' }, { name: '에폭시(메인)', v: cur.e, c: '--s1' }, { name: '기타 자재(확정 분류)', v: cur.other, c: '--s4' }, { name: '분류 확인 필요', v: cur.review, c: '--s2' }, { name: '미분류(분류표 없음)', v: cur.unc, c: '--s2' }, { name: '비자재(운반비 등)', v: cur.nonmat, c: '--s4' }].map(function (r) { r.sub = '전체 대비 ' + (pct(r.v, cur.net) === null ? '—' : pct(r.v, cur.net) + '%'); return r; }), { fmt: won });
+      if (cur.mainIncomplete) add(c2, '<p class="note">2024년 이전 주요 자재 행은 분류 범위 밖이라 "기타 자재"에 들어 있습니다.</p>');
+    }
+    draw(); [].forEach.call($('#sQuick').children, function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-r') === 'ytd' ? 'true' : 'false'); });
+    var SY = D.salesYear;
+    var g2 = grid(s, 'g2'); var c3 = card(g2, '같은 기간 비교(1/1~' + D.ytdCut.replace('-', '/') + ')', '2026은 진행 중이므로 2025 전체와 비교하지 않습니다 · 단위 억원 ' + badge('확정'));
+    bars(c3, Yrs, [{ name: '같은 기간 순매출', c: '--s1', vals: SY.map(function (y) { return y.ytdNet; }) }], { fmt: won, tfmt: function (v) { return eok(v, 0); }, lfmt: function (v) { return eok(v, 0); }, extra: function (i) { return '<div>전년 같은 기간 대비 ' + pcT(SY[i].ytdYoy) + '</div>'; }, label: '같은 기간 매출' });
+    add(c3, '<p class="note">증감: ' + SY.slice(1).map(function (y) { return y.year + ' ' + pc(y.ytdYoy); }).join(' · ') + '</p>');
+    var MY = SY.slice(2); var c4 = card(g2, '주요 자재 연도별(우레탄·페인트·에폭시)', '원장 메인여부=TRUE · 단위 억원 · 2024년부터 ' + badge('확정'));
+    var MS = [{ name: '페인트·재도장', c: '--s1', vals: MY.map(function (y) { return y.mainG.재도장; }) }, { name: '우레탄', c: '--s2', vals: MY.map(function (y) { return y.mainG.우레탄; }) }, { name: '에폭시', c: '--s3', vals: MY.map(function (y) { return y.mainG.에폭시; }) }];
+    add(c4, legend(MS)); bars(c4, MY.map(function (y) { return y.year; }), MS, { mode: 'stack', fmt: won, tfmt: function (v) { return eok(v, 0); }, lfmt: function (v) { return eok(v, 1); }, label: '주요 자재 연도별', extra: function (i) { return '<div>전체 대비 ' + MY[i].mainShare + '% · 자재 대비 ' + MY[i].mainShareMat + '%</div>'; } });
+    add(c4, table([{ t: '연도' }, { t: '메인 합계', n: 1 }, { t: '전체 대비', n: 1 }, { t: '자재 대비', n: 1 }, { t: '전년 대비', n: 1, raw: 1 }, { t: '구매 거래처', n: 1 }], MY.map(function (y) { return [y.year, won(y.main), y.mainShare + '%', y.mainShareMat + '%', y.year === '2026' ? '같은 기간 ' + pc(y.ytdMainYoy) : pc(y.mainYoy), nf(y.mainVendors)]; })));
+    add(s, '<h3 class="sec">업체별 매출</h3>');
+    var vc = card(s, '거래처별 순매출', 'ERP 거래처 표기 단위(같은 회사가 다른 표기로 등록되면 따로 집계) · 상위 120곳');
+    var vy = el('div', { class: 'chips', style: 'margin-bottom:10px' }); vy.innerHTML = ['전체'].concat(Yrs).map(function (y, i) { return '<button type="button" data-y="' + y + '" aria-pressed="' + (i === 0 ? 'true' : 'false') + '">' + y + '</button>'; }).join(''); vc.appendChild(vy);
+    var vt = el('div'); vc.appendChild(vt);
+    function drawV(y) { var yi = Yrs.indexOf(y); var list = D.vendors.filter(function (v) { return !v.nonFirm; }).map(function (v) { return { v: v, net: yi < 0 ? v.net : v.y[yi], main: yi < 0 ? v.main : v.my[yi] }; }).filter(function (x) { return x.net !== 0 || x.main !== 0; }).sort(function (a, b) { return b.net - a.net; }).slice(0, 40);
+      vt.innerHTML = table([{ t: '#', n: 1 }, { t: '거래처' }, { t: (yi < 0 ? '누적' : y) + ' 순매출', n: 1 }, { t: '주요 자재', n: 1 }, { t: '첫 구매' }, { t: '최근 구매' }, { t: '구매일 수', n: 1 }, { t: '재구매 간격(중앙)', n: 1 }], list.map(function (x, i) { var v = x.v; return [i + 1, v.name, won(x.net), x.main ? won(x.main) : '—', v.first, v.last, nf(v.buyDays), v.gapMed === null ? '—' : nf(Math.round(v.gapMed)) + '일']; }), { maxH: 520 }) + '<p class="note">스토어판매·하자·개인구매 등 업체가 아닌 거래는 표에서 뺐습니다(매출 합계에는 포함).</p>'; }
+    vy.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; [].forEach.call(vy.children, function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); }); drawV(b.getAttribute('data-y')); }); drawV('전체');
+    var EX = D.extra; add(s, '<h3 class="sec">거래처 구매 분석</h3>'); var gx = grid(s, 'g2');
+    var n1 = card(gx, '신규·기존 거래처 매출 ' + badge('확정'), '그해 첫 구매 거래처 = 신규 · 거래처 표기 단위(스토어·하자·개인·내부 제외) · 단위 억원 · 2026은 ' + D.ytdCut.replace('-', '/') + '까지');
+    var NV = EX.newVsExisting; var NS2 = [{ name: '기존 거래처', c: '--s1', vals: NV.map(function (y) { return y.exNet; }) }, { name: '신규 거래처', c: '--s2', vals: NV.map(function (y) { return y.newNet; }) }];
+    add(n1, legend(NS2)); bars(n1, Yrs, NS2, { mode: 'stack', fmt: won, tfmt: function (v) { return eok(v, 0); }, lfmt: function (v) { return eok(v, 0); }, label: '신규 기존 매출', extra: function (i) { return '<div>신규 비중 ' + (NV[i].comparable ? NV[i].newShare + '%' : '비교 불가(자료 시작 연도)') + '</div>'; } });
+    add(n1, table([{ t: '연도' }, { t: '신규', n: 1 }, { t: '신규 매출', n: 1 }, { t: '기존', n: 1 }, { t: '기존 매출', n: 1 }, { t: '신규 비중', n: 1 }], NV.map(function (y) { return [y.year, nf(y.newFirms) + '곳', won(y.newNet), nf(y.exFirms) + '곳', won(y.exNet), y.comparable ? y.newShare + '%' : '비교 불가']; })) + '<p class="note">2022년은 자료 시작 연도라 모두 신규로 잡혀 비교하지 않습니다.</p>');
+    var n2 = card(gx, '재구매 현황과 구매 간격 ' + badge('확정'), D.ledger.minDate + '~' + D.ledger.maxDate + ' · 구매일 2일 이상 = 재구매 · 거래처별 구매 간격 중앙값 기준');
+    add(n2, '<div class="tiles" style="grid-template-columns:1fr 1fr"><div class="tile"><div class="k">재구매 거래처</div><div class="v">' + nf(EX.gap.repeatFirms) + '곳</div><div class="d">구매 거래처 ' + nf(EX.gap.buyers) + '곳 중 ' + pct(EX.gap.repeatFirms, EX.gap.buyers) + '%</div></div><div class="tile"><div class="k">구매 간격</div><div class="v">' + nf(EX.gap.medianOfMedians) + '일</div><div class="d">거래처별 중앙값의 중앙값</div></div></div>');
+    hbars(n2, EX.gap.buckets.map(function (b) { return { name: '구매 간격 ' + b.bucket, v: b.firms }; }), { fmt: function (v) { return nf(v) + '곳'; } });
+    add(n2, more(table([{ t: '구매일 수' }, { t: '거래처', n: 1 }, { t: '누적 순매출', n: 1 }], D.freq.map(function (r) { return [r.bucket, nf(r.vendors), won(r.net)]; })), '구매 횟수별 보기(전체 거래처)'));
+    var n3 = card(gx, '우레탄·페인트·에폭시별 구매 거래처 ' + badge('확정'), '주요 자재 양수 구매가 있는 거래처 수 · 2024년부터(분류 범위) · 2026은 ' + D.ytdCut.replace('-', '/') + '까지');
+    var MG = EX.mainGroupBuyers; var MGS = [{ name: '페인트·재도장', c: '--s1', vals: MG.map(function (y) { return y.p; }) }, { name: '우레탄', c: '--s2', vals: MG.map(function (y) { return y.u; }) }, { name: '에폭시', c: '--s3', vals: MG.map(function (y) { return y.e; }) }];
+    add(n3, legend(MGS)); bars(n3, MG.map(function (y) { return y.year; }), MGS, { labels: 'all', label: '메인군별 구매 거래처', fmt: function (v) { return nf(v) + '곳'; }, lfmt: nf });
+    add(n3, '<p class="note">누적: 페인트 ' + nf(EX.mainGroupTotal.p) + ' · 우레탄 ' + nf(EX.mainGroupTotal.u) + ' · 에폭시 ' + nf(EX.mainGroupTotal.e) + '곳 · 두 군 이상 ' + nf(EX.mainGroupTotal.multi) + '곳 · 세 군 모두 ' + nf(EX.mainGroupTotal.all3) + '곳</p>');
+    var c7 = card(gx, '최근 구매·장기 미구매 ' + badge('확정'), '전체 거래처(업체 아닌 거래 포함) · 원장 마지막 거래일 ' + D.ledger.maxDate + ' 기준 경과일');
+    add(c7, table([{ t: '마지막 구매' }, { t: '거래처', n: 1 }, { t: '누적 순매출', n: 1 }], D.recency.map(function (r) { return [r.bucket, nf(r.vendors), won(r.net)]; })));
+    add(c7, more(table([{ t: '거래처' }, { t: '누적', n: 1 }, { t: '마지막 구매' }, { t: '경과일', n: 1 }], D.lapsed.map(function (x) { return [x.name, won(x.net), x.last, nf(x.idle)]; }), { maxH: 360 }), '180일 넘게 구매 없는 거래처 보기'));
+    add(c7, '<p class="note">같은 회사가 다른 표기로 등록돼 있으면 실제로는 구매 중인 업체가 섞일 수 있습니다.</p>');
+    add(s, '<h3 class="sec">품목별 상세</h3>');
+    var ic = card(s, '품목별 순매출', '01 원장 품목명 단위 · 구분은 보존_07 품목분류 기준');
+    var CATN = { main: '주요 자재', other: '기타 자재', review: '분류 확인 필요', unc: '미분류', nonmat: '비자재' };
+    var fi = el('div', { class: 'filters', style: 'border:0;padding:0;background:none' }); fi.innerHTML = '<label>구분<select id="iCat"><option value="">전체</option>' + Object.keys(CATN).map(function (k) { return '<option value="' + k + '">' + CATN[k] + '</option>'; }).join('') + '</select></label><label>연도<select id="iYear"><option value="">전체</option>' + Yrs.map(function (y) { return '<option>' + y + '</option>'; }).join('') + '</select></label><label class="grow">품목 검색<input type="search" id="iQ" placeholder="예: 써밋, 코트재, 시트"></label>'; ic.appendChild(fi);
+    var it = el('div'); ic.appendChild(it);
+    function drawI() { var cat = $('#iCat').value, yr = $('#iYear').value, q = $('#iQ').value.trim().toLowerCase(); var yi = Yrs.indexOf(yr);
+      var list = D.items.filter(function (x) { return (!cat || x[1] === cat) && (!q || x[0].toLowerCase().indexOf(q) >= 0); }).map(function (x) { return { x: x, v: yi < 0 ? x[4].reduce(function (a, b) { return a + b; }, 0) : x[4][yi] }; }).filter(function (o) { return o.v !== 0; }).sort(function (a, b) { return b.v - a.v; });
+      var sum = list.reduce(function (a, o) { return a + o.v; }, 0);
+      it.innerHTML = '<p class="note" style="margin:0 0 8px">' + nf(list.length) + '개 품목 · 합계 ' + wonFull(sum) + '</p>' + table([{ t: '#', n: 1 }, { t: '품목' }, { t: '구분' }, { t: '자재군' }, { t: (yi < 0 ? '전체' : yr) + ' 순매출', n: 1 }], list.slice(0, 60).map(function (o, i) { return [i + 1, o.x[0], CATN[o.x[1]] || o.x[1], o.x[2], wonFull(o.v)]; }), { maxH: 520 }) + (list.length > 60 ? '<p class="note">상위 60개만 표시 — 검색어로 좁혀 보세요.</p>' : ''); }
+    fi.addEventListener('input', drawI); fi.addEventListener('change', drawI); drawI();
+  };
+
+  // ③ 공고·낙찰
+  RENDER.notice = function (s) {
+    head(s, '공고·낙찰 분석', '2022~2025 보존_08 공고(공고ID 중복 제거) · 2026 동기화_③ 실시간(30분 자동). "POUR 특허번호 기재"는 원천 특허 칸에 넷폼알앤디 특허번호(명부 ' + nf(D.patentRef.own) + '건)가 적힌 공고만 셉니다. 채택 확정이 아닙니다.');
+    var f = el('div', { class: 'filters' }); s.appendChild(f);
+    f.innerHTML = '<label>시작 연도<select id="nFrom">' + Yrs.map(function (y) { return '<option>' + y + '</option>'; }).join('') + '</select></label><label>끝 연도<select id="nTo">' + Yrs.map(function (y) { return '<option' + (y === '2026' ? ' selected' : '') + '>' + y + '</option>'; }).join('') + '</select></label><label class="grow">공종<select id="nKind"><option value="">전체 공종</option>' + D.kindGroups.map(function (g) { return '<option>' + g + '</option>'; }).join('') + '</select></label><label class="grow">특허번호<select id="nPat"><option value="pat">특허번호 기재 공고만</option><option value="cand">POUR 관련 후보만(번호 미확인)</option><option value="all">기재 + 후보 모두</option></select></label>';
+    function PL(pm) { return pm === 'pat' ? 'POUR 특허번호 기재 공고' : pm === 'cand' ? 'POUR 관련 후보 공고' : 'POUR 특허번호 기재 + 후보 공고'; }
+    function FV() { var y1 = $('#nFrom').value, y2 = $('#nTo').value; if (y1 > y2) { var t = y1; y1 = y2; y2 = t; } return { y1: y1, y2: y2, g: $('#nKind').value, pm: $('#nPat').value }; }
+    // 공고·낙찰 3분류 목록
+    add(s, '<h3 class="sec" style="margin-top:4px">현장 목록 — 전체 공고 · 낙찰 확인 · 낙찰 미확인</h3>');
+    var lc = card(s, '', ''); var LM = { mode: 'all', sub: '', limit: 40 };
+    lc.innerHTML = '<div class="mode" id="nMode"></div><p class="note" id="nCap" style="margin:0 0 8px"></p><div class="chips" id="nSub" style="margin-bottom:10px"></div><div class="filters" style="border:0;padding:0;background:none;margin-bottom:10px"><label class="grow">현장·업체 검색<input type="search" id="nQ" placeholder="현장명 또는 낙찰업체 일부" autocomplete="off"></label></div><div id="nList" class="nl"></div><div id="nMore" style="margin-top:10px"></div>';
+    var SUBS = { won: [['A', '낙찰'], ['O', '타공법 낙찰'], ['V', '낙찰무효'], ['T', '계약해지'], ['R', '재선정']], unk: [['FC', '실제 미낙찰(유찰·취소)'], ['M', '수정 공고'], ['WK', '결과 대기(개찰 전·확인 중)'], ['GN', '자료 미확보']], all: [] };
+    var CUR = [];
+    function siteN(l) { var o = {}; l.forEach(function (r) { o[norm(r[1])] = 1; }); return Object.keys(o).length; }
+    function subOk(r, sub) { return !sub || (sub === 'R' ? /^재선정/.test(r[10]) : sub.indexOf(r[5]) >= 0); }
+    function stCls(c) { return c === 'A' ? 'b-ok' : c === 'O' || c === 'F' || c === 'C' || c === 'M' ? 'b-op' : c === 'V' || c === 'T' || c === 'G' || c === 'N' ? 'b-no' : 'b-wait'; }
+    function item(r) { var won = WON.indexOf(r[5]) >= 0; return '<div class="it"><div class="r1"><span class="nm">' + esc(r[1] || '(현장명 없음)') + '</span><span class="badge ' + stCls(r[5]) + '">' + esc(nStat(r[5])) + '</span></div><div class="mt">공고 ' + esc(r[0]) + (r[8] ? ' · 개찰 ' + esc(r[8]) : '') + ' · ' + esc(D.kindGroups[r[2]] || '') + '</div><div class="mt">' + (r[3] ? '특허번호 ' + esc(r[4]) : badge('참고') + ' 후보 — ' + esc(r[4])) + '</div>' + (won ? '<div class="mt"><b style="color:var(--ink)">' + esc(r[6] || '업체 미기재') + '</b> · ' + (r[7] ? wonFull(r[7]) : '금액 미기재') + '</div><div class="mt">근거: ' + esc(r[9]) + '</div>' : '') + (r[10] ? '<div class="mt" style="color:var(--warn)">' + esc(r[10]) + '</div>' : '') + '</div>'; }
+    function drawItems() { var q = norm($('#nQ').value); var l = CUR.filter(function (r) { return subOk(r, LM.sub) && (!q || norm(r[1]).indexOf(q) >= 0 || norm(r[6]).indexOf(q) >= 0); });
+      $('#nCap').innerHTML = '<b>' + nf(l.length) + '건</b>(현장 ' + nf(siteN(l)) + '곳) 표시 · 공고 1건은 한 번만 셉니다(공고ID·현장명+공고일+공사명 기준)';
+      $('#nList').innerHTML = l.length ? l.slice(0, LM.limit).map(item).join('') : '<p class="empty">조건에 맞는 공고가 없습니다.</p>';
+      $('#nMore').innerHTML = l.length > LM.limit ? '<button class="btn" type="button" id="nMoreB">더 보기 (' + nf(Math.min(40, l.length - LM.limit)) + '건 더 · 남은 ' + nf(l.length - LM.limit) + '건)</button>' : ''; }
+    function drawList() { var v = FV(); var sets = { all: noticeRows(v.y1, v.y2, v.g, v.pm, 'all'), won: noticeRows(v.y1, v.y2, v.g, v.pm, 'won'), unk: noticeRows(v.y1, v.y2, v.g, v.pm, 'unk') };
+      $('#nMode').innerHTML = [['all', '전체 공고'], ['won', '낙찰 확인 현장'], ['unk', '낙찰 미확인 현장']].map(function (b) { return '<button type="button" data-m="' + b[0] + '" aria-pressed="' + (LM.mode === b[0]) + '"><span class="t">' + b[1] + '</span><span class="n">' + nf(sets[b[0]].length) + '건</span><span class="s">현장 ' + nf(siteN(sets[b[0]])) + '곳</span></button>'; }).join('');
+      CUR = sets[LM.mode]; var SB = SUBS[LM.mode]; if (!SB.some(function (x) { return x[0] === LM.sub; })) LM.sub = '';
+      $('#nSub').innerHTML = SB.length ? ['<button type="button" data-s="" aria-pressed="' + (LM.sub === '') + '">전체 ' + nf(CUR.length) + '</button>'].concat(SB.map(function (x) { var n = CUR.filter(function (r) { return subOk(r, x[0]); }).length; return '<button type="button" data-s="' + x[0] + '" aria-pressed="' + (LM.sub === x[0]) + '">' + esc(x[1]) + ' ' + nf(n) + '</button>'; })).join('') : '<span class="note" style="margin:0">' + esc(PL(v.pm)) + ' · ' + esc(v.y1 === v.y2 ? v.y1 : v.y1 + '~' + v.y2) + (v.g ? ' · ' + esc(v.g) : '') + ' — 진행 상태를 함께 표시</span>';
+      drawItems(); }
+    $('#nMode').addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (!b) return; LM.mode = b.getAttribute('data-m'); LM.sub = ''; LM.limit = 40; drawList(); });
+    $('#nSub').addEventListener('click', function (e) { var b = e.target.closest('[data-s]'); if (!b) return; LM.sub = b.getAttribute('data-s'); LM.limit = 40; [].forEach.call($('#nSub').querySelectorAll('[data-s]'), function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); }); drawItems(); });
+    $('#nQ').addEventListener('input', function () { LM.limit = 40; drawItems(); });
+    $('#nMore').addEventListener('click', function (e) { if (e.target.closest('#nMoreB')) { LM.limit += 40; drawItems(); } });
+    add(s, '<h3 class="sec">연도·공종별 분석</h3>');
+    var body = el('div'); s.appendChild(body);
+    function draw() {
+      var v = FV(), y1 = v.y1, y2 = v.y2, g = v.g, o = noticeRange(y1, y2, g, v.pm); var yrs = Yrs.filter(function (y) { return y >= y1 && y <= y2; }); var LB = PL(v.pm);
+      body.innerHTML = '';
+      var tl = el('div', { class: 'tiles' }); body.appendChild(tl);
+      tl.innerHTML = '<div class="tile"><div class="k">POUR 특허번호 기재 공고</div><div class="v">' + nf(o.pat) + '건</div><div class="d">POUR 관련 후보(특허번호 미확인) ' + nf(o.cand) + '건은 확정 건수에서 제외</div></div><div class="tile"><div class="k">낙찰업체 확인</div><div class="v">' + nf(o.award) + '건</div><div class="d">공사를 맡을 업체가 선정된 것으로 확인된 공고입니다. ' + esc(LB) + ' 대비 ' + (pct(o.award, o.pour) === null ? '—' : pct(o.award, o.pour) + '%') + ' · 낙찰액 합 ' + won(o.amt) + '</div></div><div class="tile"><div class="k">타공법 낙찰</div><div class="v">' + nf(o.other) + '건</div><div class="d">POUR 아닌 공법으로 낙찰</div></div><div class="tile"><div class="k">실제 POUR 채택 확정</div><div class="v" style="color:var(--crit);font-size:18px">증빙 확인 필요</div><div class="d">채택 계약·시공 증빙 ' + nf(o.adopt) + '건</div></div>';
+      var gg = grid(body, 'g2');
+      var c1 = card(gg, 'KPI① 연도별 공고·낙찰', esc(LB) + ' · ' + (g || '전체 공종') + ' · 단위 건 ' + badge('참고'));
+      var NS = [{ name: LB, c: '--s1', vals: yrs.map(function (y) { return (o.byY[y] || {}).pour || 0; }) }, { name: '낙찰업체 확인', c: '--s3', vals: yrs.map(function (y) { return (o.byY[y] || {}).award || 0; }) }];
+      add(c1, legend(NS)); bars(c1, yrs, NS, { labels: 'all', label: '연도별 공고와 낙찰' });
+      add(c1, more(table([{ t: '연도' }, { t: '전체 공고(시장)', n: 1 }, { t: '특허번호 기재', n: 1 }, { t: '후보', n: 1 }, { t: '낙찰업체 확인(선택 기준)', n: 1 }, { t: '실제 채택 확정' }], yrs.map(function (y) { var m = D.market[y], a = noticeRange(y, y, g, 'pat'), b = noticeRange(y, y, g, 'cand'); return [y, g ? '공종 필터 시 미표시' : (m ? nf(m.total) : '자료 없음'), nf(a.pour), nf(b.pour), nf((o.byY[y] || {}).award || 0), '증빙 확인 필요']; }))));
+      var c2 = card(gg, '낙찰 상태 구분', esc(LB) + '의 원천 상태 · 단위 건');
+      var SS = [{ name: '낙찰(업체 확인)', c: '--s1', k: 'award' }, { name: '타공법 낙찰', c: '--s2', k: 'other' }, { name: '유찰·취소·무효', c: '--s4', k: 'x' }, { name: '공고 중·확인 중', c: '--s3', k: 'y' }].map(function (x) { return { name: x.name, c: x.c, vals: yrs.map(function (y) { var b = o.byY[y] || {}; return x.k === 'x' ? (b.fail || 0) + (b.cancel || 0) + (b.invalid || 0) : x.k === 'y' ? (b.open || 0) + (b.checking || 0) + (b.awardNoFirm || 0) : (b[x.k] || 0); }) }; });
+      add(c2, legend(SS)); bars(c2, yrs, SS, { mode: 'stack', label: '낙찰 상태' });
+      add(c2, more(table([{ t: '연도' }, { t: '낙찰', n: 1 }, { t: '타공법', n: 1 }, { t: '유찰', n: 1 }, { t: '취소·해지', n: 1 }, { t: '무효', n: 1 }, { t: '확인 중', n: 1 }, { t: '공고 중', n: 1 }, { t: '낙찰·업체 미기재', n: 1 }], yrs.map(function (y) { var b = o.byY[y] || {}; return [y, nf(b.award || 0), nf(b.other || 0), nf(b.fail || 0), nf(b.cancel || 0), nf(b.invalid || 0), nf(b.checking || 0), nf(b.open || 0), nf(b.awardNoFirm || 0)]; }))));
+      var c3 = card(body, '공종별 POUR 공고·낙찰', y1 + '~' + y2 + ' · ' + esc(LB) + ' · 공종·공사명 키워드로 묶음 · 단위 건'); c3.style.marginTop = '16px';
+      var kg = D.kindGroups.filter(function (k) { return o.byG[k]; }); var KS = [{ name: LB, c: '--s1', vals: kg.map(function (k) { return o.byG[k].pour; }) }, { name: '낙찰업체 확인', c: '--s3', vals: kg.map(function (k) { return o.byG[k].award; }) }];
+      add(c3, legend(KS)); bars(c3, kg.map(function (k) { return MOB ? k.replace(/\(.*\)/, '') : k; }), KS, { labels: 'all', w: 900, label: '공종별' });
+      add(c3, table([{ t: '공종' }, { t: '공고', n: 1 }, { t: '낙찰업체 확인', n: 1 }, { t: '낙찰률', n: 1 }, { t: '타공법 낙찰', n: 1 }, { t: '타공법 비율', n: 1, raw: 1 }], kg.map(function (k) { var b = o.byG[k]; var r = pct(b.other, b.pour); return [k, nf(b.pour), nf(b.award), (pct(b.award, b.pour) || 0) + '%', nf(b.other), r === null ? '—' : (r >= 10 ? '<b style="color:var(--crit)">' + r + '%</b>' : r + '%')]; })) + '<p class="note">' + badge('참고') + ' 위 기간·공종·특허번호 필터를 따릅니다. 타공법 비율 = 타공법 낙찰 ÷ 공고(10% 이상 빨간색).</p>');
+    }
+    f.addEventListener('change', function () { LM.limit = 40; drawList(); draw(); }); drawList(); draw();
+    var MK = D.market; var gm = grid(s, 'g2'); gm.style.marginTop = '16px';
+    var cm = card(gm, '전체 공고 대비 POUR 특허번호 기재 비율', '시장 전체 공고문 목록에서 특허 칸에 넷폼알앤디 특허번호가 적힌 공고 · 2022~2024 전체 목록 없음 ' + badge('참고'));
+    var mY = ['2025', '2026'].filter(function (y) { return MK[y]; });
+    bars(cm, mY, [{ name: '특허번호 기재 비율', c: '--s1', vals: mY.map(function (y) { return MK[y].patShare; }) }], { fmt: function (v) { return v + '%'; }, tfmt: function (v) { return v + '%'; }, label: '시장 비중', extra: function (i) { var m = MK[mY[i]]; return '<div>' + nf(m.pat) + ' / ' + nf(m.total) + '건</div>'; } });
+    add(cm, table([{ t: '연도' }, { t: '전체 공고', n: 1 }, { t: '특허번호 기재', n: 1 }, { t: '비율', n: 1 }, { t: '같은 기간 비율', n: 1 }, { t: '참고: 구분 표기 POUR·PD', n: 1 }], mY.map(function (y) { var m = MK[y]; return [y, nf(m.total), nf(m.pat), m.patShare + '%', m.ytdPatShare + '%', nf(m.pour) + '(' + m.share + '%)']; })) + '<p class="note">2025는 원본 사본(원본6_17), 2026은 동기화_③ 전체 공고문 — 목록 출처가 달라 참고로만 봅니다.</p>');
+    // KPI④
+    var K4 = D.kpi4, A = K4.trackA, B = K4.trackB, L = K4.live2026;
+    var c4 = card(gm, 'KPI④ 낙찰 시공사 주요 자재 구매율', '공식 구매율: <b style="color:var(--crit)">증빙 확인 필요</b> — 임의 비율을 만들지 않고 단계만 표시합니다.'); c4.id = 'kpi4';
+    function steps(rows, top) { return '<div class="steps">' + rows.map(function (r, i) { var na = r[2] === null; return '<div class="step' + (na ? ' na' : '') + '"><div class="no">' + (i + 1) + '</div><div><div class="t">' + esc(r[0]) + '</div><div class="s">' + esc(r[1]) + '</div></div><div class="val">' + (na ? esc(r[3] || '증빙 확인 필요') : nf(r[2])) + '</div>' + (na ? '' : '<div class="bar"><span style="width:' + Math.max(0.5, r[2] / top * 100) + '%"></span></div>') + '</div>'; }).join('') + '</div>'; }
+    add(c4, '<div class="chips" id="k4t" style="margin-bottom:10px"><button type="button" data-t="b" aria-pressed="true">사업자번호 확인</button><button type="button" data-t="a" aria-pressed="false">이름 연결 후보</button><button type="button" data-t="l" aria-pressed="false">2026 공고 단위</button></div><div id="k4b"></div>');
+    var K4V = {
+      b: '<p class="note" style="margin:0 0 8px">' + badge('검증 중') + ' 04_낙찰188명칭검증 — K-apt 원문 사업자번호와 ERP 구매계정 번호가 일치한 업체(업체 단위, 전체 기간)</p>' + steps([['POUR 표기 낙찰 업체(특허번호 기재+후보)', '검증 대상 낙찰업체', B.targets], ['낙찰업체 확인', 'K-apt 원문에서 낙찰 사업자번호 확인', B.kaptBiz], ['ERP 동일 법인 확인', '원문 사업자번호 = ERP 구매계정 번호(' + nf(B.erpConfirmedCodes) + '개 번호)', B.erpConfirmed], ['주요 자재 구매 확인', '해당 ERP 계정에 주요 자재 구매 있음(현장 연결 아님)', B.mainConfirmed], ['실제 POUR 채택 확인', '채택 계약·시공 증빙 ' + B.adoption + '건', null], ['낙찰 이후 구매 확인', '실제 낙찰일 ' + B.awardDate + '건 — 개찰일로 대신하지 않음', null, '산출 불가']], B.targets),
+      a: '<p class="note" style="margin:0 0 8px">' + badge('참고') + ' 보존_09 — 낙찰업체명을 정규화 이름으로 명부에 붙인 후보(업체 단위, 2022~2026). 확정 연결 아님</p>' + steps([['POUR 표기 낙찰 업체(특허번호 기재+후보)', 'POUR 낙찰 표기 ' + nf(A.awards) + '건의 업체', A.firms], ['낙찰업체 확인(이름→명부)', '명부 사업자번호를 이름으로 찾음', A.withBiz], ['ERP 동일 법인(후보)', '명부 번호 = ERP 등록코드 후보', A.erpAny], ['주요 자재 구매(후보)', '업체 단위 주요 자재 구매 있음', A.erpMain], ['실제 POUR 채택 확인', '채택 확정 ' + A.contractConfirmed + '건', null], ['낙찰 이후 구매 확인', '실제 낙찰일 없음', null, '산출 불가']], A.firms),
+      l: '<p class="note" style="margin:0 0 8px">' + badge('참고') + ' 동기화_③ 26년 POUR 공고문 — 30분 자동 동기화가 붙인 단계 판정(공고 단위, 2026)</p>' + steps([['POUR 표기 공고(원천 판정)', '특허번호 기재 여부와 별개 · 확인 필요(브랜드 DO·CNC) ' + nf(L.s1check) + '건 별도', L.s1], ['낙찰업체 확인', '원천 낙찰 표기(K-apt 원문 대조 전) · 타공법 ' + nf(L.s2other) + '건 제외', L.s2], ['ERP 동일 사업자번호', '확정 ' + nf(L.s3conf) + ' · 후보 ' + nf(L.s3cand) + ' · 확인 불가 ' + nf(L.s3unk), L.s3cand], ['주요 자재 구매 확인', '확정 ' + nf(L.s4conf) + ' · 후보(업체 단위) ' + nf(L.s4cand) + ' · 미확인 ' + nf(L.s4no), L.s4cand], ['실제 POUR 채택 확정', '확정 ' + nf(L.s5conf) + ' · 미확정 ' + nf(L.s5no), null], ['낙찰 이후 구매 확인', '판정 불가 ' + nf(L.s6na) + '(실제 낙찰일 없음)', null, '산출 불가']], L.s1)
+    };
+    $('#k4b').innerHTML = K4V.b; $('#k4t').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; [].forEach.call($('#k4t').children, function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); }); $('#k4b').innerHTML = K4V[b.getAttribute('data-t')]; });
+    add(c4, '<p class="note">③·④는 업체 단위 연결이며 해당 낙찰 현장에 자재가 들어갔다는 뜻이 아닙니다. 이름 후보와 사업자번호 확인 값을 더하거나 섞지 않습니다.</p>');
+    rateCard(s);
+    var AM = D.extra.awardMain; add(s, '<h3 class="sec">낙찰업체의 주요 자재 구매 후보</h3>');
+    var am = card(s, '낙찰업체 주요 자재 구매 후보 ' + badge('참고'), '2022~2026 POUR 낙찰 표기 업체(2024 정정표 적용) · ERP 등록코드 = 명부 사업자번호인 경우만 연결 · 원장 ' + D.ledger.minDate + '~' + D.ledger.maxDate);
+    add(am, '<div class="callout red">업체 단위 구매 이력입니다. 해당 낙찰 현장에 사용했다는 뜻이 아니며, 실제 POUR 채택 증빙은 0건입니다.</div><div class="tiles"><div class="tile"><div class="k">낙찰 업체</div><div class="v">' + nf(AM.firms) + '곳</div><div class="d">보관 낙찰자료 기준(낙찰업체 이력 표의 ' + nf(D.awardFirmCount) + '곳은 2026년 실시간 공고 포함)</div></div><div class="tile"><div class="k">명부 사업자번호 있음</div><div class="v">' + nf(AM.withBiz) + '곳</div></div><div class="tile"><div class="k">ERP 구매 연결(후보)</div><div class="v">' + nf(AM.erpLinked) + '곳</div></div><div class="tile"><div class="k">주요 자재 구매(후보)</div><div class="v">' + nf(AM.mainBuyers) + '곳</div><div class="d">합계 ' + won(AM.mainNet) + '</div></div></div>' + more(table([{ t: '#', n: 1 }, { t: '업체' }, { t: '협약' }, { t: 'POUR 낙찰 표기', n: 1 }, { t: '주요 자재 구매(후보)', n: 1 }, { t: '첫 메인 구매' }], AM.top.map(function (x, i) { return [i + 1, x.name, x.mou ? '협약 코드' : '—', nf(x.awards), won(x.main), x.mainFirst]; }), { maxH: 460 }), '상위 15곳 보기'));
+    add(s, '<h3 class="sec">낙찰업체별 이력</h3>');
+    var ac = card(s, 'POUR 공고 낙찰업체', '낙찰업체 확인 공고 기준 · 업체는 원천 표기/통합업체ID 단위(이름으로 합치지 않음) · ERP 금액은 후보 연결');
+    var af = el('div', { class: 'filters', style: 'border:0;padding:0;background:none' }); af.innerHTML = '<label class="grow">업체 검색<input type="search" id="aQ" placeholder="업체명 일부 (예: 건설, 이앤씨)"></label>'; ac.appendChild(af); var at = el('div'); ac.appendChild(at);
+    function drawA() { var q = $('#aQ').value.trim(); var list = D.awardFirms.filter(function (a) { return !q || (a.name + ' ' + a.raw).indexOf(q) >= 0; });
+      at.innerHTML = '<p class="note" style="margin:0 0 8px">' + nf(list.length) + '곳 / 전체 ' + nf(D.awardFirmCount) + '곳 — 2026년 실시간 공고 포함 기준(구매율·KPI④의 ' + nf(D.extra.awardMain.firms) + '곳은 보관 낙찰자료 기준)</p>' + table([{ t: '업체' }, { t: '구분' }].concat(Yrs.map(function (y) { return { t: y, n: 1 }; })).concat([{ t: '합계', n: 1 }, { t: '최근 공고일' }, { t: '주 공종' }, { t: 'ERP 연결' }, { t: 'ERP 순매출(후보)', n: 1 }, { t: '메인(후보)', n: 1 }]), list.slice(0, 50).map(function (a) { return [a.name + (norm(a.raw) !== norm(a.name) ? ' (원천 표기: ' + a.raw + ')' : ''), a.master ? (a.b2b ? '협약 코드' : '마스터 임시ID') : '미연결'].concat(a.y.map(nf)).concat([nf(a.n), a.last, a.topKind, a.erpLink, a.erpNet === null ? '—' : won(a.erpNet), a.erpMain ? won(a.erpMain) : '—']); }), { maxH: 560 }); }
+    af.addEventListener('input', drawA); drawA();
+  };
+
+  // ④ 시공사 통합
+  function norm(s) { return String(s || '').replace(/\(주\)|㈜|주식회사|\(유\)|유한회사|\(합\)|[\s().·,\-]/g, '').toLowerCase(); }
+  RENDER.firm = function (s) {
+    head(s, '시공사 통합 분석', '업체명을 검색하면 협약·L3·공고낙찰·매출을 한 화면에 모읍니다. 같은 이름이라도 식별자가 다르면 따로 보여 줍니다.');
+    var f = el('div', { class: 'filters' }); s.appendChild(f); f.innerHTML = '<label class="grow">시공사 검색<input type="search" id="fQ" placeholder="업체명 일부 입력 (예: 이앤씨)" autocomplete="off"></label>';
+    var top = D.topL3Firms.slice(0, 8); add(f, '<div class="chips" id="fChips">' + top.map(function (t) { return '<button type="button" data-q="' + esc(t.name) + '">' + esc(t.name) + '</button>'; }).join('') + '</div>');
+    var SL = D.extra.stageLinks; var sl = card(s, '업체별 기술지원·공고·매출 연결 ' + badge('참고'), '기술지원 = L3 요청 · 낙찰 = POUR 낙찰 표기(2024 정정 적용) · 구매 = ERP 구매(명부 번호 후보) · L2 영업보고는 자료 없음 · 2022~' + D.asOf); sl.style.marginBottom = '16px';
+    hbars(sl, ['L3+L4+L5', 'L3+L4', 'L3+L5', 'L4+L5', 'L3', 'L4', 'L5'].filter(function (k) { return SL.combo[k]; }).map(function (k) { return { name: k.replace('L3', '기술지원').replace('L4', '낙찰').replace('L5', '구매'), v: SL.combo[k] }; }), { fmt: function (v) { return nf(v) + '곳'; } });
+    add(sl, '<p class="note">대상 ' + nf(SL.firms) + '곳 · 협약 코드 업체 중 세 단계 모두 ' + nf(SL.mouAll3) + '곳 · 기술지원 뒤 첫 주요 자재 구매 ' + nf(SL.mouL3ThenMain) + '곳. 업체를 검색하면 업체별 이력이 나옵니다.</p>');
+    var left = el('div'); var right = el('div'); var wrap = el('div', { class: 'grid', style: 'grid-template-columns:minmax(0,1fr)' }); s.appendChild(wrap);
+    if (!MOB) { wrap.style.gridTemplateColumns = 'minmax(0,1fr) minmax(0,2fr)'; } wrap.appendChild(left); wrap.appendChild(right);
+    right.innerHTML = '<div class="card"><p class="empty">왼쪽 검색 결과에서 업체를 고르세요. 전체 ' + nf(D.firmCount.all) + '곳(협약 코드 ' + nf(D.firmCount.b2b) + ' · 임시 식별자 ' + nf(D.firmCount.tmp) + ' · ERP 거래처만 ' + nf(D.firmCount.erpOnly) + ').</p></div>';
+    var cur = null;
+    function act(fm) { return (fm.l3 ? fm.l3[0] : 0) * 1 + (fm.l4 ? fm.l4[0] * 3 : 0) + (fm.l5 ? Math.min(50, fm.l5[0] / 1e7) : 0); }
+    function search() { var q = norm($('#fQ').value); if (!q) { left.innerHTML = '<p class="empty">업체명을 입력하세요.</p>'; return; }
+      var list = D.firms.filter(function (fm) { if (fm.hidden) return false; if (norm(fm.n).indexOf(q) >= 0) return true; return (fm.a || []).some(function (a) { return norm(a).indexOf(q) >= 0; }) || (fm.l5 && fm.l5[5].some(function (a) { return norm(a).indexOf(q) >= 0; })); }).sort(function (a, b) { return act(b) - act(a); }).slice(0, 30);
+      var names = {}; list.forEach(function (fm) { var k = norm(fm.n); names[k] = (names[k] || 0) + 1; }); var dupN = Object.keys(names).filter(function (k) { return names[k] > 1; }).length;
+      var main = list.filter(function (fm) { return fm.k !== 'TMP'; }), tmp = list.filter(function (fm) { return fm.k === 'TMP'; });
+      function btns(l) { return '<div class="firm-res">' + l.map(function (fm) { return '<button type="button" data-id="' + esc(fm.i) + '"' + (cur === fm.i ? ' aria-current="true"' : '') + '><span class="nm">' + esc(fm.n) + '</span><span class="meta">' + esc(kindName(fm.k)) + ' · ' + esc(fm.i) + ' · 마지막 활동 ' + esc(fm.last || '기록 없음') + '</span></button>'; }).join('') + '</div>'; }
+      left.innerHTML = (dupN || (main.length && tmp.length) ? '<div class="callout">같은 이름의 서로 다른 식별자가 있습니다 — 자동으로 합치지 않았습니다.</div>' : '') + (list.length ? btns(main) + (tmp.length ? '<details class="more"' + (main.length ? '' : ' open') + '><summary>임시 식별자 ' + tmp.length + '개 보기(이름 관측 · 업체 확정 아님)</summary>' + btns(tmp) + '</details>' : '') : '<p class="empty">검색 결과가 없습니다.</p>'); return;
+      left.innerHTML = (list.length ? '<div class="firm-res">' + list.map(function (fm) { return '<button type="button" data-id="' + esc(fm.i) + '"' + (cur === fm.i ? ' aria-current="true"' : '') + '><span class="nm">' + esc(fm.n) + '</span><span class="meta">' + esc(kindName(fm.k)) + ' · ' + esc(fm.i) + ' · 마지막 활동 ' + esc(fm.last || '기록 없음') + '</span></button>'; }).join('') + '</div>' : '<p class="empty">검색 결과가 없습니다.</p>'); }
+    function kindName(k) { return k === 'B2B' ? '협약 코드 보유' : k === 'ERP' ? 'ERP 거래처(업체 마스터 미연결)' : '임시 식별자(이름 관측)'; }
+    function show(id) { var fm = D.firms.filter(function (x) { return x.i === id; })[0]; if (!fm) return; cur = id; [].forEach.call(left.querySelectorAll('[data-id]'), function (b) { b.setAttribute('aria-current', b.getAttribute('data-id') === id ? 'true' : 'false'); });
+      var h = '<div class="card" style="margin-bottom:12px"><h4>' + esc(fm.n) + ' ' + badge(fm.k === 'B2B' ? '참고' : '검증 중') + '</h4><p class="cap">' + esc(kindName(fm.k)) + ' · 식별자 ' + esc(fm.i) + (fm.a && fm.a.length ? ' · 다른 표기: ' + esc(fm.a.join(', ')) : '') + '</p><dl class="kv"><dt>마지막 활동일</dt><dd>' + esc(fm.last || '기록 없음') + '</dd><dt>MOU 협약</dt><dd>' + (fm.m ? (fm.m[0] ? '협약일 ' + esc(fm.m[0]) : '협약 코드 있음 · 협약일 미확보') + ' (' + esc(fm.m[1]) + ')' : '협약 코드 없음') + '</dd></dl></div><div class="lv">';
+      h += '<div class="card"><h5>아파트별 영업활동 ' + badge('산출 대기') + '</h5><p class="empty">영업보고 원천이 아직 없습니다(0건 = 자료 없음).</p></div>';
+      h += '<div class="card"><h5>L3 기술지원·PT·컨설팅 ' + badge('참고') + '</h5>' + (fm.l3 ? '<dl class="kv"><dt>요청</dt><dd>' + nf(fm.l3[0]) + '건</dd><dt>기술자문 / 컨설팅 / PT</dt><dd>' + nf(fm.l3[1]) + ' / ' + nf(fm.l3[2]) + ' / ' + nf(fm.l3[3]) + '</dd><dt>처음 ~ 마지막</dt><dd>' + esc(fm.l3[4]) + ' ~ ' + esc(fm.l3[5]) + '</dd></dl>' + table([{ t: '요청일' }, { t: '유형' }, { t: '현장' }], fm.l3[6]) : '<p class="empty">L3 요청 기록 없음</p>') + '</div>';
+      h += '<div class="card" style="grid-column:1/-1"><h5>L4 공고·낙찰 ' + badge('참고') + '</h5>' + (fm.l4 ? '<dl class="kv"><dt>POUR 공고 낙찰</dt><dd>' + nf(fm.l4[0]) + '건 (낙찰액 ' + won(fm.l4[3]) + ')</dd><dt>타공법 낙찰</dt><dd>' + nf(fm.l4[1]) + '건</dd><dt>최근 공고일</dt><dd>' + esc(fm.l4[2]) + '</dd></dl>' + table([{ t: '공고일' }, { t: '현장' }, { t: '공종' }, { t: '상태' }], fm.l4[4]) : '<p class="empty">POUR 공고 낙찰 기록 없음</p>') + '<p class="note">실제 POUR 채택 확정: 증빙 확인 필요</p></div>';
+      h += '<div class="card"><h5>L5 매출·구매 ' + badge(fm.l5 ? '검증 중' : '참고') + '</h5>' + (fm.l5 ? '<dl class="kv"><dt>ERP 순매출</dt><dd>' + wonFull(fm.l5[0]) + '</dd><dt>주요 자재 구매</dt><dd>' + (fm.l5[1] ? wonFull(fm.l5[1]) + ' (마지막 ' + esc(fm.l5[3]) + ')' : '없음') + '</dd><dt>마지막 구매</dt><dd>' + esc(fm.l5[2] || '—') + '</dd><dt>구매일 수</dt><dd>' + nf(fm.l5[4]) + '일</dd><dt>ERP 거래처 표기</dt><dd>' + esc(fm.l5[5].join(', ')) + '</dd><dt>연결 방식</dt><dd>' + esc(fm.l5[6]) + '</dd></dl>' : '<p class="empty">연결된 ERP 구매 기록 없음(이름이 같아도 번호 근거 없으면 연결하지 않음)</p>') + '</div>';
+      h += '</div><div class="card" style="margin-top:12px"><h5 style="margin:0 0 6px;color:var(--navy)">검증 상태</h5><ul class="list"><li>업체 연결: ' + (fm.k === 'ERP' ? 'ERP 거래처 표기 그대로(업체 마스터 번호 없음)' : 'L3·공고는 정규화 이름으로 통합업체ID에 붙인 추정 연결(법인 확정 아님)') + '</li><li>매출 연결: ' + (fm.l5 ? esc(fm.l5[6]) : '없음') + '</li><li>현장 단위 자재 사용 확정: 0건(현장 증빙 미확보)</li></ul></div>';
+      right.innerHTML = h; if (MOB) right.scrollIntoView({ behavior: 'smooth' }); }
+    left.addEventListener('click', function (e) { var b = e.target.closest('[data-id]'); if (b) show(b.getAttribute('data-id')); });
+    $('#fChips').addEventListener('click', function (e) { var b = e.target.closest('[data-q]'); if (!b) return; $('#fQ').value = b.getAttribute('data-q'); search(); var first = left.querySelector('[data-id]'); if (first) show(first.getAttribute('data-id')); });
+    $('#fQ').addEventListener('input', search); search();
+  };
+
+  // ⑤ 운영 KPI
+  RENDER.ops = function (s) {
+    var TK = D.trackerKpi, ST = D.stages, MO = D.mou;
+    head(s, '운영 KPI 분석', '업무트래커 KPI 3개 · L1~L5 단계 · 관리 대상 업체. 업체 연결은 정규화 이름 추정이 포함된 참고값입니다.');
+    var KP = D.kpiPeriod, asM = KP.asOf.slice(0, 7), yMin = KP.newL3.rows.length ? KP.newL3.rows[0][0].slice(0, 4) : '2022';
+    function plist(u) { var o = [], y, q, m; if (u === 'year') { for (y = +asM.slice(0, 4); y >= +yMin; y--) o.push([String(y), y + '년']); } else if (u === 'q') { for (y = +asM.slice(0, 4); y >= 2022; y--) for (q = 4; q >= 1; q--) { if (y + '-' + pad2(q * 3 - 2) <= asM) o.push([y + '-Q' + q, y + '년 ' + q + '분기']); } } else if (u === 'm') { m = asM; while (m >= '2022-01') { o.push([m, m.slice(0, 4) + '년 ' + (+m.slice(5)) + '월']); y = +m.slice(0, 4); q = +m.slice(5) - 1; m = q === 0 ? (y - 1) + '-12' : y + '-' + pad2(q); } } else o.push(['all', '전체 기간']); return o; }
+    var pf = el('div', { class: 'filters' }); s.appendChild(pf);
+    pf.innerHTML = '<label>단위<select id="kU"><option value="year">연도</option><option value="q">분기</option><option value="m">월</option><option value="all">전체 기간</option></select></label><label class="grow">분석 기간<select id="kP"></select></label><button class="btn" type="button" id="kWhy">왜 이 기간부터 계산되나요?</button>';
+    var KSEL = { u: 'year', p: '2025' };
+    function fillP() { var l = plist(KSEL.u); if (!l.some(function (x) { return x[0] === KSEL.p; })) { var best = l.filter(function (x) { var pr = periodRange(KSEL.u, x[0]); return kpiEval('newL3', pr[0], pr[1]).status === '참고값' || kpiEval('reuse', pr[0], pr[1]).status === '참고값'; })[0]; KSEL.p = (best || l[0])[0]; } $('#kP').innerHTML = l.map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === KSEL.p ? ' selected' : '') + '>' + x[1] + '</option>'; }).join(''); }
+    var g = grid(s, 'g3');
+    function kcard(host, key, title, pr) { var t = TK[key], e = kpiEval(key, pr[0], pr[1]), h = ''; var c = card(host, title + ' ' + badge(e.status), esc(pr[2]) + ' 기준', { click: function () { trackerDetail(key, title); } }); c.classList.add('kpi');
+      if (key === 'reach') h = '<div class="v na">계산에 필요한 자료 부족</div><div class="d">L2 영업보고 자료가 없어 기간을 바꿔도 계산되지 않습니다(0%가 아님).</div><div class="tile" style="margin-top:10px"><div class="k">' + badge('참고') + ' 보조지표 · L3 최초 이용 대상</div><div class="v">' + nf(e.aux.all) + '곳 <span style="font-size:14px;font-weight:600">(업체 확인 중)</span></div><div class="d">이 기간 기술지원(L3)을 처음 요청한 대상 수입니다. 관리주체·개인·내부 표기·설계감리 등 시공사가 아닌 요청자가 섞여 있어 시공사 수나 직접 진입 수가 아닙니다 · 그중 협약 코드 ' + nf(e.aux.mou) + '곳</div></div>';
+      else { var s2 = e.s, unit = key === 'newL3' ? '협약' : '첫 이용';
+        h = '<div class="v' + (e.status === '참고값' ? '' : ' na') + '">' + (e.rate !== null ? e.rate + '%' : e.obsRate !== null ? '잠정 ' + e.obsRate + '%' : '계산에 필요한 자료 부족') + '</div><div class="d">' + (e.rate !== null ? '해당 건수 / 전체 대상 <b>' + nf(s2.okHit) + ' / ' + nf(s2.ok) + '곳</b> · 대상 ' + unit + '월 ' + esc(e.okFrom === e.okTo ? e.okFrom : e.okFrom + '~' + e.okTo) : '이 기간에는 관측이 끝난 ' + unit + ' 업체가 없습니다.') + (key === 'reuse' && e.strict !== null ? '<br>주소 검증 기준 ' + e.strict + '% (' + nf(s2.sHit) + ' / ' + nf(s2.sOk) + '곳)' : '') + '</div>' +
+          '<ul class="list" style="margin-top:8px;font-size:13px">' + (s2.obs ? '<li>관측 중 ' + nf(s2.obs) + '곳 별도 — 지금까지 ' + nf(s2.obsHit) + '곳 ' + (key === 'newL3' ? '이용' : '재사용') + '(잠정 ' + e.obsRate + '%, 하한값)</li>' : '') + (s2.pre ? '<li>L3 기록 시작(' + esc(KP.cover) + ') 전 ' + unit + ' ' + nf(s2.pre) + '곳 제외</li>' : '') + (key === 'reuse' && s2.nosite ? '<li>첫 이용 현장 미식별 ' + nf(s2.nosite) + '곳 제외</li>' : '') + (key === 'reuse' && (s2.sameOnly || s2.sameSite) ? '<li>같은 현장 반복만 ' + nf(s2.sameOnly) + '곳 · 같은 현장 의심 ' + nf(s2.sameSite) + '곳 — 재사용으로 세지 않음</li>' : '') + (key === 'newL3' ? '<li>협약일 미확보 ' + nf(KP.newL3.undated) + '곳은 기간을 정할 수 없어 모든 기간에서 제외</li>' : '') + '<li>신뢰 수준: ' + esc(KP[key].conf) + '</li></ul>'; }
+      add(c, h + '<div class="tgt"><span>기준 ' + t.base + '%</span><span>목표 ' + t.target + '%</span><span>도전 ' + t.challenge + '%</span></div><p class="note"><b>' + (e.status === '산출 대기' ? '계산에 필요한 자료 부족' : '참고값(공식 기준 확정 전)') + ' · 목표 달성 판정 안 함.</b></p><div class="more">기간별 해당 건수·전체 대상 자세히 ›</div>'); }
+    function drawK() { g.innerHTML = ''; var pr = periodRange(KSEL.u, KSEL.p); TKN.forEach(function (x) { kcard(g, x[0], x[1], pr); }); }
+    fillP(); drawK();
+    pf.addEventListener('change', function (ev) { if (ev.target.id === 'kU') { KSEL.u = $('#kU').value; fillP(); } KSEL.p = $('#kP').value; drawK(); });
+    $('#kWhy').addEventListener('click', kpiWhy);
+    var tr = card(s, '운영 KPI 기간별 추이 ' + badge('참고값'), '관측이 끝난 기간만 참고값 · 관측 중은 잠정(하한값)으로 따로 · 분모가 작은 기간은 값이 크게 흔들립니다'); tr.style.marginTop = '16px';
+    var YR = Yrs.filter(function (y) { return y >= KP.cover.slice(0, 4); }); var ES = [['newL3', '① 신규 협약 활성화', '--s1'], ['reuse', '② 다른 현장 재사용(첫 이용 기준)', '--s2']].map(function (x) { return { k: x[0], name: x[1], c: x[2], vals: YR.map(function (y) { return kpiEval(x[0], y + '-01', y + '-12').rate; }) }; });
+    add(tr, legend(ES)); bars(tr, YR, ES, { labels: 'all', fmt: function (v) { return v === null || v === undefined ? '—' : v + '%'; }, label: '연도별 운영 KPI 참고값', extra: function (i, si) { var e = kpiEval(ES[si].k, YR[i] + '-01', YR[i] + '-12'); return '<div>' + nf(e.s.okHit) + ' / ' + nf(e.s.ok) + '곳' + (e.s.obs ? ' · 관측 중 ' + nf(e.s.obs) + '곳 별도' : '') + '</div>'; } });
+    var T1 = kpiYearsTable('newL3'), T2r = kpiYearsTable('reuse');
+    add(tr, '<h4 style="margin:14px 0 6px;font-size:15px">① 신규 협약업체 L3 활성화율</h4>' + T1.year + more(T1.q, '분기별 보기') + '<h4 style="margin:14px 0 6px;font-size:15px">② 다른 현장 재이용률 (첫 이용 기준)</h4>' + T2r.year + more(T2r.q, '분기별 보기'));
+    add(s, '<p class="note">기준·목표·도전 값은 목표치이며 실제 달성률이 아닙니다. 참고값은 공식 정의·계산 대상이 확정되기 전의 분석값입니다(카드를 누르면 기간별 해당 건수·전체 대상 표).</p>');
+    add(s, '<h3 class="sec">L1~L5 단계별 현황</h3>');
+    var g2 = grid(s, 'g2'); var c1 = card(g2, '단계별 업체 수', '통합업체ID 기준(임시 식별자 포함) · 업체 단위 ' + badge('참고'));
+    hbars(c1, [{ name: 'L1 관심(샘플·카탈로그)', v: ST.L1 }, { name: '아파트별 영업활동', v: 0, sub: '자료 없음 — 원천 미확보' }, { name: 'L3 기술지원·PT·컨설팅', v: ST.L3 }, { name: 'L4 POUR 공고 낙찰 표기', v: ST.L4 }, { name: 'L5 ERP 구매(번호 후보)', v: ST.L5any }, { name: 'L5 주요 자재 구매(번호 후보)', v: ST.L5main }], { fmt: function (v) { return v === 0 ? '자료 없음' : nf(v) + '곳'; } });
+    var c2 = card(g2, '단계 겹침', '같은 통합업체ID가 여러 단계에 있는 경우');
+    add(c2, table([{ t: '조합' }, { t: '업체', n: 1 }], [['L3 + L4', nf(ST.L3andL4)], ['L4 + L5(메인)', nf(ST.L4andL5main)], ['L3 + L5(메인)', nf(ST.L3andL5main)], ['L3 + L4 + L5(메인)', nf(ST.L3L4L5)]]));
+    add(c2, '<h4 style="margin:16px 0 6px;font-size:15px">협약업체(협약 코드 ' + nf(MO.b2b) + '곳) 이용·구매</h4>' + table([{ t: '항목' }, { t: '업체', n: 1 }, { t: '비율', n: 1 }], [['L3 이용', nf(MO.l3), pct(MO.l3, MO.b2b) + '%'], ['POUR 낙찰 표기', nf(MO.l4), pct(MO.l4, MO.b2b) + '%'], ['ERP 구매(후보)', nf(MO.buyAny), pct(MO.buyAny, MO.b2b) + '%'], ['주요 자재 구매(후보)', nf(MO.buyMain), pct(MO.buyMain, MO.b2b) + '%'], ['협약일 확보', nf(MO.dated), pct(MO.dated, MO.b2b) + '%']]));
+    add(s, '<h3 class="sec">관리 대상 업체(협약 코드 보유)</h3>');
+    var asOf = D.asOf; function daysAgo(d) { if (!d) return null; return Math.round((Date.parse(asOf) - Date.parse(d)) / 86400000); }
+    var B2B = D.firms.filter(function (f) { return f.k === 'B2B'; });
+    var idle = B2B.filter(function (f) { var a = daysAgo(f.last); return a === null || a > 180; });
+    var noL3 = B2B.filter(function (f) { return !f.l3; });
+    var reuse = B2B.filter(function (f) { return f.l3 && (f.l3[0] === 1 || daysAgo(f.l3[5]) > 180); });
+    var tl = el('div', { class: 'tiles' }); s.appendChild(tl);
+    tl.innerHTML = '<div class="tile"><div class="k">장기 무활동(180일 초과·기록 없음)</div><div class="v">' + nf(idle.length) + '곳</div><div class="d">활동 기록 없음 ' + nf(idle.filter(function (f) { return !f.last; }).length) + '곳 포함</div></div><div class="tile"><div class="k">L3 미이용</div><div class="v">' + nf(noL3.length) + '곳</div><div class="d">협약 코드 ' + nf(B2B.length) + '곳 중</div></div><div class="tile"><div class="k">재이용 관리 대상</div><div class="v">' + nf(reuse.length) + '곳</div><div class="d">L3 1회만 또는 마지막 L3 180일 초과</div></div><div class="tile"><div class="k">기준일</div><div class="v" style="font-size:20px">' + esc(asOf) + '</div><div class="d">활동 = L1·L3·L4·L5 중 가장 최근</div></div>';
+    add(s, '<p class="note">' + badge('확정') + ' 거래처 기준 장기 미구매: 구매 거래처 ' + nf(D.extra.inactive.vendorsAll) + '곳 중 마지막 구매가 180일 넘은 곳 ' + nf(D.extra.inactive.vendorsOver180) + '곳(원장 마지막 거래일 ' + D.ledger.maxDate + ' 기준, 업체 아닌 거래 제외).</p>');
+    var lc = card(s, '대상 업체 목록', '목록을 골라 보세요 · 업체 연결은 이름 추정 포함 ' + badge('참고')); lc.style.marginTop = '16px';
+    add(lc, '<div class="chips" id="oT" style="margin-bottom:10px"><button type="button" data-t="idle" aria-pressed="true">장기 무활동</button><button type="button" data-t="noL3" aria-pressed="false">L3 미이용</button><button type="button" data-t="reuse" aria-pressed="false">재이용 관리 대상</button></div><div id="oL"></div>');
+    var LISTS = { idle: idle, noL3: noL3, reuse: reuse };
+    function drawL(k) { var l = LISTS[k].slice().sort(function (a, b) { return (a.last || '') < (b.last || '') ? -1 : 1; }); $('#oL').innerHTML = table([{ t: '업체' }, { t: '협약일' }, { t: 'L3 요청', n: 1 }, { t: '마지막 L3' }, { t: 'POUR 낙찰', n: 1 }, { t: 'ERP 마지막 구매' }, { t: '마지막 활동' }, { t: '경과일', n: 1 }], l.map(function (f) { return [f.n, f.m && f.m[0] ? f.m[0] : '미확보', f.l3 ? nf(f.l3[0]) : '0', f.l3 ? f.l3[5] : '—', f.l4 ? nf(f.l4[0]) : '0', f.l5 ? (f.l5[2] || '—') : '—', f.last || '기록 없음', f.last ? nf(daysAgo(f.last)) : '—']; }), { maxH: 520 }); }
+    $('#oT').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; [].forEach.call($('#oT').children, function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); }); drawL(b.getAttribute('data-t')); }); drawL('idle');
+    var EXo = D.extra; add(s, '<h3 class="sec">협약 후 기술지원 이용</h3>'); var gm2 = grid(s, 'g2');
+    var m1 = card(gm2, '협약 후 기술지원(L3) 이용률 ' + badge('참고'), '협약일 있는 협약 코드 업체 · 협약일 이후 L3 요청 여부(기간 제한 없음) · 기준일 ' + D.asOf);
+    add(m1, '<div class="tiles" style="grid-template-columns:1fr 1fr"><div class="tile"><div class="k">협약 후 L3 이용</div><div class="v">' + EXo.mouL3.rate + '%</div><div class="d">' + nf(EXo.mouL3.usedAfter) + ' / ' + nf(EXo.mouL3.dated) + '곳 · 협약일 미확보 ' + nf(EXo.mouL3.mou - EXo.mouL3.dated) + '곳 제외</div></div><div class="tile"><div class="k">첫 기술지원까지</div><div class="v">' + nf(EXo.mouL3.lagMedian) + '일</div><div class="d">중앙값</div></div></div>');
+    hbars(m1, EXo.mouL3.lagBuckets.map(function (b) { return { name: '첫 L3까지 ' + b.bucket, v: b.firms }; }), { fmt: function (v) { return nf(v) + '곳'; } });
+    add(m1, '<p class="note">L3 기록 없음 ' + nf(EXo.mouL3.none) + '곳 · 협약 전에만 이용 ' + nf(EXo.mouL3.beforeOnly) + '곳. 기간 제한이 없는 값이라 트래커 ①(협약 후 1년 이내)과 다릅니다.</p>');
+    var m2 = card(gm2, '기술지원 이후 구매 ' + badge('참고'), 'L3 요청 업체 ↔ ERP 거래처(명부 번호 후보 연결) · 원장 ' + D.ledger.minDate + '~' + D.ledger.maxDate + ' · 인과가 아니라 순서만 본 값');
+    add(m2, table([{ t: '항목' }, { t: '업체', n: 1 }], [['L3 요청 업체', nf(EXo.l3ThenBuy.l3Firms)], ['ERP 거래처로 연결되는 업체', nf(EXo.l3ThenBuy.erpLinked)], ['첫 L3 후 180일 안에 구매', nf(EXo.l3ThenBuy.buyWithin180)], ['첫 구매가 첫 L3 이후', nf(EXo.l3ThenBuy.firstBuyAfterL3)], ['첫 주요 자재 구매가 첫 L3 이후', nf(EXo.l3ThenBuy.firstMainAfterL3)]]));
+    add(s, '<h3 class="sec">L3 기술지원·PT·컨설팅 이용 현황</h3>');
+    var g3 = grid(s, 'g2'); var SV = D.serviceYear;
+    var c3 = card(g3, '연도별 L3 요청', '보존_12 L3요청집계포함=TRUE · 단위 건 · 2022~2023은 잔디 추출 범위가 작아 과소 ' + badge('참고'));
+    var SS = [{ name: '기술자문', c: '--s1', vals: SV.map(function (y) { return y.tech; }) }, { name: '컨설팅 내역서', c: '--s2', vals: SV.map(function (y) { return y.consult; }) }, { name: '공법설명회(PT)', c: '--s3', vals: SV.map(function (y) { return y.pt; }) }, { name: '기타 문의', c: '--s4', vals: SV.map(function (y) { return y.etc; }) }];
+    add(c3, legend(SS)); bars(c3, Yrs, SS, { mode: 'stack', label: '연도별 L3' }); add(c3, more(table([{ t: '연도' }, { t: '기술자문', n: 1 }, { t: '컨설팅', n: 1 }, { t: 'PT', n: 1 }, { t: '기타', n: 1 }, { t: '합계', n: 1 }, { t: '요청 업체', n: 1 }], SV.map(function (y) { return [y.year, nf(y.tech), nf(y.consult), nf(y.pt), nf(y.etc), nf(y.total), nf(y.firms)]; }))) + '<p class="note">10/25 이후 플랫폼 신규(자동 동기화): 기술자문 ' + nf(D.serviceLiveAdded.tech) + ' · 컨설팅 요청 ' + nf(D.serviceLiveAdded.consultReq) + ' · PT ' + nf(D.serviceLiveAdded.pt) + '건 — 위 연도 합계에는 아직 넣지 않음</p>');
+    var SM = D.serviceMonth.filter(function (m) { return m.m >= '2025-01'; });
+    var c4 = card(g3, '월별 L3 요청(2025~)', '단위 건');
+    var MS2 = [{ name: '기술자문', c: '--s1', vals: SM.map(function (m) { return m.tech; }) }, { name: '컨설팅 내역서', c: '--s2', vals: SM.map(function (m) { return m.consult; }) }, { name: '공법설명회(PT)', c: '--s3', vals: SM.map(function (m) { return m.pt; }) }];
+    add(c4, legend(MS2)); lines(c4, SM.map(function (m) { return m.m; }), MS2, { xfmt: function (m) { return m.slice(2).replace('-', '.'); }, w: 640, h: 260, ticks: 8, label: '월별 L3' });
+  };
+
+  // ⑥ 데이터 검증
+  RENDER.data = function (s) {
+    var V = D.verify;
+    head(s, '데이터 검증 현황', '원천별 건수·수집 시각·분류·미연결·충돌·증빙 부족. 내부 전표와 검증 메모는 "자세히"를 눌러야 보입니다.');
+    var g = grid(s, 'g2');
+    var c1 = card(g, '자동 동기화 원천(30분)', '탭별 마지막 성공 · 원천 행 · 최근 실행의 변화');
+    add(c1, table([{ t: '원천 · 탭' }, { t: '마지막 성공' }, { t: '원천 행', n: 1 }, { t: '신규', n: 1 }, { t: '수정', n: 1 }, { t: '원천삭제', n: 1 }, { t: '보류', n: 1 }], D.sync.tabs.map(function (t) { return [t.src + ' · ' + t.tab, t.t.slice(5, 16), nf(t.rows), nf(t.nw), nf(t.md), nf(t.del), nf(t.hold)]; }), { maxH: 420 }) + '<p class="note">마지막 실행 ' + esc(R.sync.lastRun || D.sync.lastRun) + ' · 실패 ' + (D.sync.failedLatest.length ? esc(D.sync.failedLatest.join(', ')) : '없음') + ' · 중복 키 기록 ' + nf(D.sync.dupRiskRows) + '행</p>' + (D.sync.recentChanges.length ? more(table([{ t: '일시' }, { t: '원천·탭' }, { t: '유형' }, { t: '변경 열' }], D.sync.recentChanges), '최근 행 단위 변경 보기') : ''));
+    var c2 = card(g, '고정 원천(이관 데이터)', '자동 동기화 대상이 아닌 기준 탭 · 행 수는 시트 실측');
+    var keyTabs = ['01_ERP최신원장', '02_주요 자재최신상세', '보존_02_업체마스터', '보존_08_공고', '보존_09_낙찰상태', '보존_12_L3서비스', '보존_14_L1관심', '보존_07_품목분류'];
+    add(c2, table([{ t: '탭' }, { t: '행(머리글 포함)', n: 1 }, { t: '분류', raw: 1 }], D.tabs.filter(function (t) { return keyTabs.indexOf(t.name) >= 0; }).map(function (t) { return [t.name, nf(t.rows), badge(t.cls)]; })) + '<p class="note">중복 제거: 원장 ' + nf(V.dedupe.ledgerRows) + '행 = 고유 ID ' + nf(V.dedupe.ledgerUnique) + ' · 공고 중복 ID ' + nf(V.dedupe.noticeDupSkipped) + ' · L3 이벤트 중복 ' + nf(V.dedupe.l3DupSkipped) + ' · L3 원천 중복 제거 기록 ' + nf(V.dedupe.l3SourceDupRemoved) + '행</p>');
+    add(s, '<h3 class="sec">데이터 분류</h3>');
+    var cc = D.tabClassCount; var c3 = card(s, '탭 분류(' + nf(D.tabs.length) + '개)', '확정·참고·검증 중·미확정·사본/중복 — 합산은 확정 원장만');
+    var order = ['확정', '참고', '검증 중', '미확정', '운영 기록', '요약·검산', '원본 사본·중복', '빈 탭'];
+    add(c3, '<div class="tiles">' + order.filter(function (k) { return cc[k]; }).map(function (k) { return '<div class="tile"><div class="k">' + badge(k) + '</div><div class="v">' + nf(cc[k]) + '개</div></div>'; }).join('') + '</div>' + more(table([{ t: '탭' }, { t: '분류', raw: 1 }, { t: '행', n: 1 }, { t: '설명' }], order.reduce(function (a, k) { return a.concat(D.tabs.filter(function (t) { return t.cls === k; }).map(function (t) { return [t.name, badge(t.cls), nf(t.rows), t.why]; })); }, []), { maxH: 520 }), '탭별 목록 보기'));
+    add(s, '<h3 class="sec">연결·충돌·증빙</h3>');
+    var g2 = grid(s, 'g2'); var U = V.unlinked;
+    var c4 = card(g2, '미연결 업체', '법인 확정 연결이 없는 자료');
+    add(c4, table([{ t: '항목' }, { t: '건수', n: 1 }], [['낙찰 기록 중 업체 미연결(임시 ID)', nf(U.awardRows) + ' / ' + nf(U.awardRowsAll) + '행'], ['낙찰 기록 중 이름 추정 연결', nf(U.awardNameOnly) + '행'], ['L3 요청 중 업체 미연결', nf(U.l3Rows) + ' / ' + nf(U.l3RowsAll) + '행'], ['ERP 등록코드가 업체 마스터에 없음', nf(U.erpCodesNotInMaster) + ' / ' + nf(U.erpCodesAll) + '개'], ['ERP 등록코드 없는 거래처', nf(U.erpVendorsNoCode) + '곳(' + won(U.erpNetNoCode) + ')'], ['2026 POUR 공고 낙찰업체 미기재', nf(U.live2026NoFirm) + '건'], ['2026 POUR 공고 동명 복수', nf(U.live2026SameName) + '건']]));
+    var BC = V.bizConflicts; var c5 = card(g2, '사업자번호 충돌', '번호는 표시하지 않고 업체명만 표시');
+    add(c5, table([{ t: '유형' }, { t: '건수', n: 1 }], [['원천 업체코드와 낙찰업체명 불일치', nf(BC.codeMismatch.length)], ['업체 마스터: 같은 번호를 쓰는 복수 업체', nf(BC.masterShared.length)], ['ERP 표본 검증: 번호 충돌', nf(BC.erpSample.length)], ['낙찰: 같은 이름에 복수 코드', nf(BC.awardSameName.length)], ['현장거래 연결: 동명·번호 충돌 행', nf(BC.siteTradeConflictRows)]]) + more('<ul class="list">' + BC.codeMismatch.map(function (x) { return '코드 불일치: ' + x; }).concat(BC.masterShared).concat(BC.erpSample.map(function (x) { return 'ERP 표본: ' + x; })).concat(BC.awardSameName.map(function (x) { return '낙찰 동명: ' + x; })).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>', '충돌 업체명 보기'));
+    var AI = V.awardIssues; var c6 = card(g2, '잘못된 낙찰·취소·재선정', 'POUR 특허번호 기재 공고 기준(2022~2026)');
+    add(c6, table([{ t: '항목' }, { t: '건수', n: 1 }], [['낙찰무효', nf(AI.invalid.length)], ['공고 취소', nf(AI.cancelPour)], ['유찰', nf(AI.failPour)], ['타공법 낙찰', nf(AI.otherPour)], ['재공고 묶음(같은 현장 재선정)', nf(AI.regroupGroups) + '묶음 · ' + nf(AI.regroupNotices) + '건'], ['K-apt 원문과 낙찰업체 불일치', nf(AI.kaptMismatch.length)], ['추가 대조로 업체 표기가 바뀐 공고', nf(AI.added11.length)]]) + more(table([{ t: '현장' }, { t: '공고 수', n: 1 }, { t: '공고일' }], AI.regroupList) + table([{ t: '대상' }, { t: '사유' }], AI.kaptMismatch) + table([{ t: '현장' }, { t: '새 업체 표기' }, { t: '기존 표기' }, { t: 'POUR 채택' }], AI.added11), '사례 보기'));
+    var c7 = card(g2, '부족한 증빙 목록', '보존_21 검토보류 · KPI 제약(10·11탭)');
+    add(c7, table([{ t: '부족한 증빙' }, { t: '처리' }], V.evidenceGaps.map(function (x) { return [x.type + (x.n > 1 ? ' (' + x.n + '건)' : ''), x.action]; }), { maxH: 360 }) + more(table([{ t: '유형' }, { t: '검증 메모' }], V.evidenceGaps.map(function (x) { return [x.type, x.text]; })), '검증 메모 자세히') + more(table([{ t: 'KPI' }, { t: '필요한 증빙·제약' }], V.kpiNeeds), 'KPI별 필요 증빙 보기'));
+    var FX = D.fix2024; if (FX && FX.applied) { add(s, '<h3 class="sec">2024년 업체코드 정정</h3>'); var fxc = card(s, '2024 공고자료 업체코드 정정표 적용 ' + badge('검증 중'), '2024 원본 파일의 업체코드(파일 내부 번호)가 B2B 코드로 잘못 옮겨진 낙찰 기록 · 원본 무변경, 별도 정정표 적용');
+      var bc = FX.byClass; add(fxc, table([{ t: '구분' }, { t: '행', n: 1 }, { t: '처리' }], [['A1 정정 확정 — 이 공고의 K-apt 원문 사업자번호', nf(bc.A1 || 0), '이름 기준 업체로 정정(증빙: 해당 공고)'], ['A2 정정 확정 — 같은 업체명의 다른 공고 원문 사업자번호', nf(bc.A2 || 0), '이름 기준 업체로 정정(증빙: 다른 공고)'], ['B 후보 — 업체명만 일치', nf(bc.B || 0), '업체 미확정으로 분리, 후보 유지'], ['C 마스터 미등록', nf(bc.C || 0), '업체 미확정으로 분리, 별도 관리'], ['D 같은 업체(임시 ID 체계만 다름)', nf(bc.D || 0), '오류 아님']]) + table([{ t: '낙찰 시공사 수(업체 단위)' }, { t: '업체', n: 1 }, { t: '업체 미확정 낙찰', n: 1 }], [['① 원천 업체코드 그대로(정정 전)', nf(FX.firmsSourceCode), nf(FX.unlinkedSourceCode)], ['② 이름 기준(이전 화면)', nf(FX.firmsNameBased), '—'], ['③ 정정표 적용(현재 화면)', nf(FX.firmsFixed), nf(FX.unlinkedFixed)]]) + more(table([{ t: '원본 낙찰업체' }, { t: '후보(이름 일치)' }, { t: '행', n: 1 }], FX.candidates.map(function (x) { return [x.firm, x.cand, nf(x.rows)]; })) + table([{ t: '마스터 미등록 업체' }, { t: '행', n: 1 }], FX.unregistered.map(function (x) { return [x.firm, nf(x.rows)]; })), '후보·미등록 업체 보기') + '<p class="note">업체명만 일치한 기록은 같은 법인으로 확정하지 않았습니다. 매출·공고 건수는 바뀌지 않습니다.</p>'); }
+    add(s, '<h3 class="sec">금액 검산</h3>');
+    var c8 = card(s, '원장 계산값 vs 시트 독립 재계산(보존_20)', '같은 숫자가 나와야 확정 표시 · 2026은 보존_20 작성 이후 원장이 갱신돼 차이가 납니다');
+    add(c8, table([{ t: '연도' }, { t: '순매출(원장)', n: 1 }, { t: '보존_20', n: 1 }, { t: '자재 매출', n: 1 }, { t: '보존_20', n: 1 }, { t: '주요 자재', n: 1 }, { t: '보존_20', n: 1 }, { t: '판정', raw: 1 }], V.amountCheck.map(function (a) { var ok = a.net === a.netRef && a.mat === a.matRef && (a.main === null ? a.mainRef === 0 : a.main === a.mainRef); return [a.year, wonFull(a.net), wonFull(a.netRef), wonFull(a.mat), wonFull(a.matRef), a.main === null ? '분류 범위 밖' : wonFull(a.main), wonFull(a.mainRef), ok ? badge('확정') : (a.year === '2026' ? badge('참고') + ' 원장 갱신분' : badge('미확정'))]; })) + '<p class="note">시트 자체 검증: 보존_24 ' + nf(V.checks.c24pass) + '/' + nf(V.checks.c24) + ' 통과 · 보존_20 ' + nf(V.checks.c20match) + '/' + nf(V.checks.c20) + ' 일치</p>');
+  };
+
+  // ⑦ 전체 데이터 조회 — 원본 행을 서버에서 페이지 단위로 읽어 보여 준다(KPI 합산과 별개)
+  function srv(fn, args, ok, fail) { if (window.__TEST_SERVER__) { setTimeout(function () { try { ok(window.__TEST_SERVER__[fn].apply(null, args)); } catch (e) { fail(e); } }, 0); return; } var r = google.script.run.withSuccessHandler(ok).withFailureHandler(fail); r[fn].apply(r, args); }
+  function xt(k, v, d, st) { return '<div class="tile"><div class="k">' + esc(k) + (st ? ' ' + badge(st) : '') + '</div><div class="v">' + v + '</div><div class="d">' + esc(d) + '</div></div>'; }
+  var VIEWS = [
+    ['firm', '① 전체 업체', /^보존_02_업체마스터$|^09_34명칭추가후보$|^동기화_②_업체가입현황$/],
+    ['mou', '② 협약 현황', /^보존_18_MOU협약근거$/],
+    ['l2', '③ 영업활동(L2)', /^보존_15_L2확정$|^동기화_②_여정_최종$|^보존_14_L1관심$|^동기화_②_샘플카달로그요청$/],
+    ['l3', '④ 기술지원·PT(L3)', /^보존_12_L3서비스$|^보존_13_|^보존_17_|^동기화_②_(기술자문문의|컨설팅요청_통합|컨설팅요청|공법설명회이력|공법설명회|발행이력|기타문의답변현황)$/],
+    ['l4', '⑤ 공고·낙찰(L4)', /^보존_0[89]_|^동기화_③_|^0[458]_|^보존_1[06]_|^보존_23_|^14_공고연도|^원본6_|^06_신규연도별|^07_新旧/],
+    ['l5', '⑥ 매출·구매(L5)', /^0[13]_ERP|^02_메인|^보존_0[4567]_|^1[23]_(연도별|월별)매출|^보존_20_/],
+    ['link', '⑦ 업체·현장 연결 분석', /^보존_03_현장마스터$|^보존_11_현장거래연결$|^보존_10_현장판정$/],
+    ['etc', '⑧ 미확정·검증 필요 자료', /./]
+  ];
+  function viewOf(name) { for (var i = 0; i < VIEWS.length; i++) if (VIEWS[i][2].test(name)) return VIEWS[i][0]; return 'etc'; }
+  function sumRole(cls) { return cls === '확정' ? '합계에 사용' : /사본|요약|빈 탭|운영 기록/.test(cls) ? '합계에 쓰지 않음(확인용)' : '참고 분석에 사용'; }
+  RENDER.all = function (s) {
+    head(s, '전체 데이터 조회', '통합시트의 모든 탭과 로컬 엑셀(잔디 영업활동·PT) 기록을 한 줄도 빼지 않고 볼 수 있습니다. 여기서 보는 것과 KPI에 더하는 것은 별개입니다(사본·요약 탭은 합계에 쓰지 않음).');
+    var TB = D.tabs.filter(function (t) { return t.name !== '시트1'; }).map(function (t) { return { name: t.name, rows: Math.max(0, t.rows - 1), cls: t.cls, why: t.why, view: viewOf(t.name), ext: false }; });
+    (D.extTables || []).forEach(function (t) { TB.push({ name: t.name, rows: t.rows, cls: '참고', why: t.note, view: t.group === 'l2' ? 'l2' : t.group === 'l3' ? 'l3' : 'link', ext: true }); });
+    var allRows = TB.reduce(function (a, t) { return a + t.rows; }, 0), sheetN = TB.filter(function (t) { return !t.ext; }).length;
+    var ic = card(s, '데이터 전체 점검', '탭마다 원본 행 수 · 조회 화면에서 볼 수 있는 행 수 · 빈 행을 비교합니다');
+    add(ic, '<div class="tiles">' + xt('데이터 묶음', nf(TB.length) + '개', '통합시트 탭 ' + nf(sheetN) + '개 + 로컬 엑셀 ' + nf(TB.length - sheetN) + '개입니다.') + xt('원본 기록', nf(allRows) + '행', '모든 탭의 머리글을 뺀 행 수 합계입니다(사본 포함).') + xt('합계에 쓰는 탭', nf(TB.filter(function (t) { return t.cls === '확정'; }).length) + '개', '매출 원장처럼 숫자를 더할 때 쓰는 기준 탭입니다.') + xt('확인용 탭', nf(TB.filter(function (t) { return /사본|요약/.test(t.cls); }).length) + '개', '원본 사본·요약이라 합계에 다시 더하지 않는 탭입니다.') + '</div><div style="margin-top:10px"><button class="btn" type="button" id="invBtn">모든 탭 행 수 다시 세기</button> <span class="note" id="invMsg"></span></div><div id="invOut"></div>');
+    $('#invBtn').onclick = function () { $('#invMsg').textContent = '모든 탭을 읽는 중입니다(1~3분)…'; srv('getInventory', [false], function (r) { if (!r || !r.ok) { $('#invMsg').textContent = (r && r.message) || '실패'; return; } var bad = r.tabs.filter(function (t) { return !t.ok; }).length, tot = r.tabs.reduce(function (a, t) { return a + t.readRows; }, 0), emp = r.tabs.reduce(function (a, t) { return a + t.empty; }, 0);
+      $('#invMsg').textContent = '점검 ' + r.at + ' · 탭 ' + nf(r.tabs.length) + '개 · 원본 ' + nf(tot) + '행 · 조회 가능 ' + nf(r.tabs.reduce(function (a, t) { return a + t.browseTotal; }, 0)) + '행 · 빈 행 ' + nf(emp) + ' · 불일치 ' + bad + '개';
+      $('#invOut').innerHTML = more(table([{ t: '탭' }, { t: '원본 행', n: 1 }, { t: '조회 가능 행', n: 1 }, { t: '빈 행', n: 1 }, { t: 'A열 기준 행', n: 1 }, { t: '일치', raw: 1 }], r.tabs.map(function (t) { return [t.name, nf(t.readRows), nf(t.browseTotal), nf(t.empty), nf(t.colARows), t.ok ? badge('확정') : badge('미확정')]; }), { maxH: 460 }), '탭별 점검 결과 보기'); }, function (e) { $('#invMsg').textContent = '실패: ' + (e && e.message || e); }); };
+    var vc = el('div', { class: 'chips', id: 'avTabs', style: 'margin:16px 0 12px' }); s.appendChild(vc);
+    vc.innerHTML = VIEWS.map(function (v, i) { return '<button type="button" data-v="' + v[0] + '" aria-pressed="' + (i === 0) + '">' + esc(v[1]) + '</button>'; }).join('');
+    var vb = el('div'); s.appendChild(vb);
+    var br = card(s, '', ''); br.id = 'brCard'; br.style.marginTop = '16px'; br.innerHTML = '<p class="empty">위 목록에서 [조회]를 누르면 원본 기록이 여기에 나옵니다.</p>';
+    var BS = { name: '', q: '', from: '', to: '', page: 1 };
+    // 숫자 카드(누르면 계산 기준 + 관련 목록) — info: [제목, 계산 기준, 목록 자료, 검색어]
+    var TIP = {}; var tipN = 0;
+    function xc(k, v, d, st, info) { var id = 'x' + (++tipN); TIP[id] = info; return '<div class="tile" data-x="' + id + '" role="button" tabindex="0" style="cursor:pointer"><div class="k">' + esc(k) + (st ? ' ' + badge(st) : '') + '</div><div class="v">' + v + '</div><div class="d">' + esc(d) + '</div><div class="d" style="color:var(--navy-2);font-weight:600;margin-top:4px">기준·목록 보기 ›</div></div>'; }
+    function siteTiles() { var S = D.site; if (!S || S.done === undefined) return '<p class="empty">로컬 엑셀 내장 자료가 없습니다.</p>'; var Y = S.byYear, y26 = Y.filter(function (y) { return y.year === '2026'; })[0] || {}, P6 = S.plat26 || {};
+      var PT = '잔디_PT_신청목록', EV = 'PT_실제진행(아파트·월)', LK = '아파트_L2-L3_연결', L2T = '잔디_L2_영업활동(기술문의)';
+      return '<h4 style="margin:4px 0 8px;font-size:15px">공법설명회(PT) — 신청과 실제 진행은 기준이 다릅니다</h4><div class="tiles">' +
+        xc('공법설명회(PT) 신청', nf(S.ptReq) + '건', '공법설명회를 요청한 횟수입니다. 실제 진행 여부와는 별개입니다.', '참고', ['PT 신청', '잔디 PT 통합목록의 신청 1건 = 1행. 연도는 최초 요청일 기준입니다.', PT, '']) +
+        xc('신청 중 진행 확인', nf(S.reqDone) + '건', '신청 기록 가운데 진행까지 확인된 신청 수입니다(신청 1건 단위).', '참고', ['신청 중 진행 확인', '신청 목록 중 재검증 등급 A(진행 확인). 잔디 신청과 연결되지 않은 진행은 여기 들어가지 않습니다.', PT, '진행 완료']) +
+        xc('실제 PT 진행', nf(S.done) + '건', '실제로 진행한 것으로 확인된 공법설명회 수입니다(같은 아파트·같은 달은 1번).', '참고', ['실제 진행', '잔디 진행 확인(A) + 2025 PT실적보고서(' + nf(S.rep.rows) + '행, 중복 제외 ' + nf(S.rep.unique) + '건) + 2026 플랫폼 공법설명회 "완료". 같은 아파트·같은 달은 한 번만 셉니다. 신청 중 진행 확인(' + nf(S.reqDone) + ')보다 많은 이유: 잔디 신청과 연결되지 않은 실적보고서·플랫폼 진행 기록을 포함했기 때문입니다.', EV, '']) +
+        xc('진행 확정(예정)', nf(S.reqPlan) + '건', '앞으로 진행하기로 일정이 잡힌 신청입니다. 아직 진행 수에 넣지 않습니다.', '참고', ['진행 확정(예정)', '신청 상태가 예정·일정 변경이고 예정일이 기준일(' + S.asOf + ') 이후인 신청입니다.', PT, '진행 확정']) +
+        xc('취소', nf(S.reqCancel) + '건', '취소가 확인된 신청입니다.', '참고', ['취소', '재검증 등급 D 또는 신청 상태 "취소".', PT, '취소']) +
+        xc('진행 여부 미확인', nf(S.reqUnknown) + '건', '진행했는지 기록이 없는 신청입니다. 0건(안 함)이 아니라 미기록입니다.', '참고', ['진행 여부 미확인', '완료·예정·취소 근거가 없는 신청입니다. 잔디 목록에는 진행 결과가 거의 기록되지 않습니다.', PT, '미확인']) +
+        xc('2026 결과 미기록', nf(P6['진행중(날짜 지남·결과 미기록)'] || 0) + '건', '2026년 플랫폼에서 날짜가 지났는데 완료·취소가 기록되지 않은 PT입니다. 2026년 실제 진행은 ' + nf(y26.done) + '건보다 많을 수 있습니다.', '미확정', ['2026 결과 미기록', '통합시트 동기화_②_공법설명회이력: 완료 ' + nf(P6['완료']) + ' · 진행중(날짜 지남) ' + nf(P6['진행중(날짜 지남·결과 미기록)']) + ' · 진행중(예정) ' + nf(P6['진행중(예정)']) + ' · 종료/취소 ' + nf(P6['종료/취소']) + ' · 상태 빈칸 ' + nf(P6['상태 빈칸']) + '. 잔디 2026 신청 중 미확인 ' + nf(y26.reqUnknown) + '건(두 원천은 겹칠 수 있어 더하지 않음).', '동기화_②_공법설명회이력', '진행중']) +
+        '</div><h4 style="margin:16px 0 8px;font-size:15px">아파트별 영업활동 → 공법설명회(PT) 연결 ' + badge('참고') + '</h4><div class="tiles">' +
+        xc('영업활동 기록', nf(S.l2Records) + '건', '기술문의(=영업보고) 글 수입니다. 같은 자료라 한 번만 셉니다. 내용별 검증 전이라 L2 공식 실적이 아닙니다.', '참고', ['영업활동 기록', '잔디 POUR공법기술문의 전체목록(원글 ' + nf(S.l2Orig) + ' · 댓글 ' + nf(S.l2Comment) + ', ' + S.l2From + '~' + S.l2To + '). 영업보고와 같은 원천입니다.', L2T, '']) +
+        xc('영업활동 현장', nf(S.l2Sites) + '곳', '영업활동 기록이 있는 아파트 수입니다. 이름이 같아도 주소가 다르면 따로 셉니다.', '참고', ['영업활동 현장', '날짜·아파트명이 있는 ' + nf(S.l2Usable) + '건을 아파트명(표기 정리) + 주소 시·구로 묶었습니다.', L2T, '']) +
+        xc('연결 확인', nf(S.confirmed) + '곳', '영업활동 이후 PT 진행까지 확인된 아파트 수입니다.', '참고', ['연결 확정', '아파트명 일치 + 주소 시·구 일치 + 첫 영업활동일 이후 실제 진행 기록. 시공사명은 쓰지 않았습니다.', LK, '확정']) +
+        xc('같은 현장인지 확인 필요', nf(S.candidate) + '곳', '아파트 이름만 같아 같은 현장인지 더 확인해야 하는 수입니다.', '참고', ['연결 후보', '아파트명은 같지만 주소가 없거나 다르거나, 실제 진행이 영업활동보다 먼저인 경우입니다.', LK, '후보']) +
+        xc('영업활동 후 PT 진행 비율', S.rate === null ? '계산 불가' : S.rate + '%', '영업활동을 한 아파트 중 이후 PT 진행까지 확인된 비율입니다(연결 확인 ÷ 영업활동 현장).', '참고', ['참고 전환율', nf(S.confirmed) + ' ÷ ' + nf(S.l2Sites) + '. 실제 진행 기록이 대부분 2025년이라 다른 해는 낮게 나오는 참고값입니다.', LK, '확정']) + '</div>' +
+        '<h4 style="margin:16px 0 6px;font-size:15px">연도별</h4>' + table([{ t: '연도' }, { t: 'PT 신청(신청 연도)', n: 1 }, { t: '신청 중 진행 확인', n: 1 }, { t: '예정', n: 1 }, { t: '취소', n: 1 }, { t: '미확인', n: 1 }, { t: '실제 진행(진행 연도)', n: 1 }, { t: '영업활동 현장', n: 1 }, { t: '연결 확인', n: 1 }], Y.map(function (y) { return [y.year, nf(y.req), nf(y.reqDone), nf(y.reqPlan), nf(y.reqCancel), nf(y.reqUnknown), nf(y.done) + (y.done ? ' (잔디 ' + y.doneA + (y.doneRepOnly ? ' · 보고서만 ' + y.doneRepOnly : '') + (y.donePlatOnly ? ' · 플랫폼만 ' + y.donePlatOnly : '') + ')' : ''), nf(y.l2Sites), nf(y.confirmed)]; })) +
+        '<p class="note">신청 연도와 실제 진행 연도는 다를 수 있습니다(예: 2024년에 신청하고 2025년에 진행). 그래서 "신청 중 진행 확인"과 "실제 진행"의 연도별 숫자는 서로 맞지 않습니다. 2026년 실제 진행 ' + nf(y26.done) + '건은 결과가 기록된 것만이며, 결과 미기록 PT가 따로 있습니다.</p>'; }
+    function bindTips(host) { host.addEventListener('click', function (e) { var t = e.target.closest('[data-x]'); if (!t) return; var f = TIP[t.getAttribute('data-x')]; if (!f) return;
+      openDetail(f[0] + ' — 계산 기준', '<p>' + esc(f[1]) + '</p><p><button class="btn primary" type="button" id="tipList">관련 목록 보기' + (f[3] ? ' ("' + esc(f[3]) + '" 검색)' : '') + '</button></p>');
+      $('#tipList').onclick = function () { var dl = $('dialog'); if (dl && dl.close) dl.close(); BS = { name: f[2], q: f[3], from: '', to: '', page: 1 }; loadBrowse(); br.scrollIntoView({ behavior: 'smooth' }); }; }); }
+    function viewHead(v) { var SY = D.salesYear, NY = D.noticeYear, SV = D.serviceYear;
+      if (v === 'firm') return '<div class="tiles">' + xt('업체 색인', nf(D.firmCount.all) + '곳', '협약 코드·L3 요청·낙찰·ERP 거래처에 나오는 업체를 식별자별로 모은 수입니다.') + xt('협약 코드 업체', nf(D.firmCount.b2b) + '곳', 'B2B 코드가 있는 협약업체 수입니다.') + xt('임시 식별자', nf(D.firmCount.tmp) + '개', '이름만 관측돼 업체를 확정하지 못한 표기입니다.') + xt('ERP 거래처만', nf(D.firmCount.erpOnly) + '곳', '매출 원장에는 있지만 업체 마스터와 연결되지 않은 거래처입니다.') + '</div>';
+      if (v === 'mou') return '<div class="tiles">' + xt('협약 코드 업체', nf(D.mou.b2b) + '곳', 'B2B 코드가 있는 협약업체 수입니다.') + xt('협약일 확인', nf(D.mou.dated) + '곳', '협약일이 기록된 업체 수입니다.') + xt('협약일 없음', nf(D.mou.b2b - D.mou.dated) + '곳', '협약 코드는 있지만 협약일이 비어 있는 업체입니다.') + xt('협약 후 L3 이용', nf(D.extra.mouL3.usedAfter) + '곳', '협약일 이후 기술지원을 요청한 업체 수입니다.', '참고') + '</div>';
+      if (v === 'l2') return siteTiles() + '<p class="note">통합시트에는 L2 영업보고 탭(보존_15)이 비어 있습니다. 여정 탭의 "L2"는 예전 기준(기술자문 문의·샘플 요청) 표기입니다.</p>';
+      if (v === 'l3') return siteTiles() + more(table([{ t: '연도' }, { t: '기술자문', n: 1 }, { t: '컨설팅', n: 1 }, { t: 'PT 요청', n: 1 }, { t: '합계', n: 1 }, { t: '요청 업체', n: 1 }], SV.map(function (y) { return [y.year, nf(y.tech), nf(y.consult), nf(y.pt), nf(y.total), nf(y.firms)]; })), '통합시트 L3 요청(연도별) 보기');
+      if (v === 'l4') return '<div class="tiles">' + xt('POUR 특허번호 기재 공고', nf(NY.reduce(function (a, y) { return a + y.pour; }, 0)) + '건', '2022년부터 특허 칸에 POUR 특허번호가 적힌 공고 수입니다.') + xt('POUR 관련 후보 공고', nf(NY.reduce(function (a, y) { return a + y.cand; }, 0)) + '건', '특허번호는 없지만 POUR 공고 목록에 있는 공고입니다.') + xt('낙찰업체 확인', nf(NY.reduce(function (a, y) { return a + y.award; }, 0)) + '건', '특허번호 기재 공고 중 낙찰업체가 적힌 공고입니다.') + xt('낙찰 시공사', nf(D.awardFirmCount) + '곳', 'POUR 표기 공고를 낙찰받은 업체 수입니다. 2026년 실시간 공고 포함 기준(2024 정정 적용) — 구매율의 ' + nf(D.extra.awardMain.firms) + '곳은 보관 낙찰자료 기준입니다.', '참고') + '</div>';
+      if (v === 'l5') return '<div class="tiles">' + xt('매출 원장', nf(D.ledger.rows) + '행', '이카운트 판매 원장 줄 수입니다(' + D.ledger.minDate + '~' + D.ledger.maxDate + ').', '확정') + xt('순매출 합계', won(D.ledger.total), '부가세를 뺀 공급가액 합계입니다.', '확정') + xt('주요 자재 매출', won(SY.reduce(function (a, y) { return a + (y.main || 0); }, 0)), '2024년부터 주요 자재로 분류된 매출 합계입니다.', '확정') + xt('거래처', nf(D.ledger.uniqueVendors) + '곳', '원장에 나오는 거래처 표기 수입니다.') + '</div>';
+      if (v === 'link') return siteTiles();
+      return '<p class="note">KPI 정의·검증 메모·자동 동기화 기록·원본 사본 등 확정 전이거나 확인용인 자료입니다.</p>'; }
+    function drawView(v) { var list = TB.filter(function (t) { return t.view === v; }); var tot = list.reduce(function (a, t) { return a + t.rows; }, 0);
+      vb.innerHTML = ''; var c = card(vb, VIEWS.filter(function (x) { return x[0] === v; })[0][1], '원본 기록 ' + nf(tot) + '행 · 묶음 ' + nf(list.length) + '개');
+      add(c, viewHead(v) + '<h4 style="margin:16px 0 6px;font-size:15px">원본 자료 목록</h4>' + table([{ t: '자료' }, { t: '원본 행', n: 1 }, { t: '구분', raw: 1 }, { t: '합계 사용' }, { t: '', raw: 1 }], list.map(function (t) { return [(t.ext ? '[로컬 엑셀] ' : '') + t.name, nf(t.rows), badge(t.cls), sumRole(t.cls), '<button class="btn" type="button" data-tab="' + esc(t.name) + '">조회</button>']; }), { maxH: 420 }));
+      bindTips(c);
+      c.addEventListener('click', function (e) { var b = e.target.closest('[data-tab]'); if (!b) return; BS = { name: b.getAttribute('data-tab'), q: '', from: '', to: '', page: 1 }; loadBrowse(); br.scrollIntoView({ behavior: 'smooth' }); }); }
+    function loadBrowse() { br.innerHTML = '<h4>' + esc(BS.name) + '</h4><p class="note">불러오는 중…</p>';
+      srv('getBrowse', [BS.name, { q: BS.q, from: BS.from, to: BS.to, page: BS.page, size: 50 }], drawBrowse, function (e) { br.innerHTML = '<h4>' + esc(BS.name) + '</h4><p class="empty">읽기 실패: ' + esc(e && e.message || e) + '</p>'; }); }
+    function drawBrowse(r) { if (!r || !r.ok) { br.innerHTML = '<h4>' + esc(BS.name) + '</h4><p class="empty">' + esc((r && r.message) || '읽기 실패') + '</p>'; return; }
+      var ys = Object.keys(r.byYear).sort();
+      br.innerHTML = '<h4>' + esc(r.name) + ' <span class="cap" style="font-weight:500">' + esc(r.src) + '</span></h4>' + (r.note ? '<p class="cap">' + esc(r.note) + '</p>' : '') +
+        '<div class="filters" style="border:0;padding:0;background:none;margin:10px 0"><label class="grow">검색(업체명·아파트명·공고번호 등)<input type="search" id="bQ" value="' + esc(BS.q) + '" placeholder="예: 이앤씨, 래미안"></label><label>시작 월<input type="month" id="bF" value="' + esc(BS.from) + '"></label><label>끝 월<input type="month" id="bT" value="' + esc(BS.to) + '"></label><button class="btn primary" type="button" id="bGo">조회</button></div>' +
+        '<div class="tiles">' + xt('전체 행', nf(r.total), '이 자료의 원본 행 수입니다(머리글 제외).') + xt('조건에 맞는 행', nf(r.matched), '검색어·기간 조건을 통과한 행 수입니다.') + xt('빈 행', nf(r.empty), '값이 하나도 없는 행입니다. 빼지 않고 함께 셉니다.') + xt('날짜 없어 기간에서 제외', nf(r.noDateExcluded), r.dateCol ? '기간 필터를 쓸 때 "' + r.dateCol + '" 칸이 빈 행입니다.' : '날짜 칸이 없는 자료라 기간 필터를 쓰지 않습니다.') + '</div>' +
+        '<p class="note">연도별(검색 조건 기준, 날짜 칸: ' + esc(r.dateCol || '없음') + '): ' + (ys.length ? ys.map(function (y) { return esc(y) + ' ' + nf(r.byYear[y]); }).join(' · ') : '해당 없음') + '</p>' +
+        table(r.header.map(function (h, i) { return i === 0 ? { t: h, n: 1 } : { t: h }; }), r.rows, { maxH: 560 }) +
+        '<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap"><button class="btn" type="button" id="bPrev"' + (r.page <= 1 ? ' disabled' : '') + '>이전</button><span class="note" style="margin:0">' + nf(r.page) + ' / ' + nf(r.pages) + '쪽 · 한 쪽 ' + r.size + '행 · "원본 행"은 시트의 행 번호입니다</span><button class="btn" type="button" id="bNext"' + (r.page >= r.pages ? ' disabled' : '') + '>다음</button></div>';
+      var go = function (p) { BS.q = $('#bQ').value.trim(); BS.from = $('#bF').value; BS.to = $('#bT').value; BS.page = p; loadBrowse(); };
+      $('#bGo').onclick = function () { go(1); }; $('#bQ').onkeydown = function (e) { if (e.key === 'Enter') go(1); }; $('#bPrev').onclick = function () { go(r.page - 1); }; $('#bNext').onclick = function () { go(r.page + 1); }; }
+    vc.addEventListener('click', function (e) { var b = e.target.closest('[data-v]'); if (!b) return; [].forEach.call(vc.children, function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); }); drawView(b.getAttribute('data-v')); });
+    drawView('firm');
+    var cover = VIEWS.map(function (v) { return TB.filter(function (t) { return t.view === v[0]; }).length; }).reduce(function (a, b) { return a + b; }, 0);
+    add(s, '<p class="note">모든 자료가 8개 메뉴 중 하나에 들어 있습니다(' + nf(cover) + ' / ' + nf(TB.length) + '개). 공식 = 계산 근거가 확인된 값 · 참고 = 연결·기간 확인이 더 필요한 값 · 미확정 = 필요한 원천이 없는 값. "0건"은 자료가 있는데 해당 기록이 없는 것, "자료 없음"은 원천이 없는 것, "계산 불가"는 분모가 없는 것입니다.</p>');
+  };
+
+  // ── 쉬운 설명(ⓘ) — 카드·숫자·그래프·표 제목 옆 버튼. 화면 표시만 추가하고 계산·데이터는 건드리지 않는다 ──
+  var HELP_ST = { '확정': '원본 자료로 계산 근거가 확인된 값입니다.', '참고': '지금 자료로 계산은 되지만 업체·현장 연결이나 기간 확인이 더 필요한 값입니다. 공식 실적으로 쓰지 않습니다.', '참고값': '지금 자료로 계산은 되지만 공식 기준이 정해지기 전의 값입니다.', '검증 중': '근거를 확인하는 중인 값입니다. 확인된 범위 안에서만 셌습니다.', '미확정': '필요한 증빙이 없어 숫자를 정하지 못한 항목입니다.', '증빙 확인 필요': '실제로 그렇다는 증빙(계약·시공 기록)이 없어 확인이 필요합니다.', '산출 대기': '계산에 필요한 원천 자료가 없어 숫자를 내지 못했습니다. 0이라는 뜻이 아닙니다.', '잠정': '지켜볼 기간이 아직 끝나지 않아 나중에 늘어날 수 있는 값입니다.', '운영 기록': '자동 동기화가 남긴 실행 기록입니다.', '요약·검산': '다른 표를 요약하거나 검산한 표라 합계에 다시 더하지 않습니다.', '원본 사본·중복': '원본을 복사해 둔 표라 확인용으로만 보고 합계에 더하지 않습니다.', '빈 탭': '내용이 없는 탭입니다.' };
+  var HELP_TERMS = [[/L1/, 'L1', '관심 단계 — 샘플·카탈로그를 요청한 기록입니다.'], [/L2|영업활동|영업보고/, 'L2 · 영업활동', '영업 담당이 아파트 현장을 찾아가 남긴 기록입니다. 업체명이 적혀 있지 않습니다.'], [/L3|기술지원/, 'L3 · 기술지원', '기술자문·컨설팅 내역서·공법설명회(PT)를 요청한 기록입니다.'], [/L4/, 'L4', '공고·낙찰 단계 — 우리 특허가 적힌 공고를 낙찰받은 기록입니다.'], [/L5/, 'L5', '구매 단계 — 판매 원장에 우리 자재를 산 기록이 있는 것입니다.'], [/PT|공법설명회/, '공법설명회(PT)', '아파트 관계자에게 POUR 공법을 설명하는 자리입니다.'], [/활성화율/, '활성화율', '협약한 업체 중 실제로 기술지원을 이용하기 시작한 업체의 비율입니다.'], [/재이용|재사용/, '재이용률', '한 번 이용한 업체가 다른 현장으로 다시 이용한 비율입니다.'], [/전환|PT 진행 비율/, '영업활동 후 PT 진행 비율', '영업활동을 한 아파트 중 이후 PT 진행까지 확인된 비율입니다.'], [/주요 자재|메인/, '주요 자재', '우레탄·페인트(재도장)·에폭시처럼 따로 분류한 핵심 자재입니다(2024년부터 분류).'], [/특허번호 기재/, '특허번호 기재 공고', '공고문 특허 칸에 우리(넷폼알앤디) 특허번호가 적힌 공고입니다. 실제로 POUR 공법을 썼다는 뜻은 아닙니다.'], [/낙찰/, '낙찰', '공사를 맡을 업체가 정해진 것입니다. 낙찰과 실제 공법 사용은 다릅니다.'], [/타공법/, '타공법', 'POUR가 아닌 다른 공법으로 낙찰된 것입니다.'], [/협약/, '협약 업체', 'B2B 협약을 맺어 협약 코드가 있는 업체입니다.'], [/임시 식별자/, '임시 식별자', '이름만 보이고 어느 회사인지 아직 확정하지 못한 표기입니다.'], [/후보|확인 필요/, '후보', '이름 등이 같아 같은 업체·현장일 가능성이 있지만 아직 확인하지 못한 것입니다.'], [/첫 이용|최초/, '첫 이용', '기록상 처음 이용한 날입니다. 기록이 시작되기 전 이용은 알 수 없습니다.'], [/간격|중앙값/, '중앙값', '여러 값을 순서대로 세웠을 때 가운데 값입니다. 아주 큰 값 하나에 흔들리지 않습니다.'], [/같은 기간/, '같은 기간', '해마다 1월 1일부터 같은 날짜까지만 더해 비교한 것입니다.'], [/원장/, '판매 원장', '이카운트 판매현황을 옮긴 표로, 매출 합계의 유일한 기준입니다.'], [/거래처/, '거래처', '판매 원장에 적힌 거래처 이름 단위입니다. 같은 회사라도 이름 표기가 다르면 따로 셉니다.']];
+  function hp() { var L = D.ledger || {}; return { led: L.minDate + ' ~ ' + L.maxDate, y26: '2026-01-01 ~ ' + D.asOf, ytd: '해마다 1/1 ~ ' + (D.ytdCut || '').replace('-', '/'), not: '2022년 ~ ' + D.asOf, mainY: '2024년 ~ ' + L.maxDate + '(주요 자재 분류가 있는 기간)' }; }
+  // [화면 문구 규칙, function → {m: 뜻, s: 출처, p: 기간, u: 센 것, c: 헷갈리는 점, g: 그래프 보는 법}]
+  var HELP = [
+    [/POUR 공고·낙찰 \(2026\)/, function (P) { return { m: '2026년 공고 중 특허 칸에 우리 특허번호가 적힌 공고 수입니다. 아래 "낙찰업체 확인"은 그중 공사를 맡을 업체가 확인된 공고 수입니다.', s: '공고문 현황(2026년은 원천 시트에서 30분마다 자동으로 가져온 표)', p: P.y26, u: '공고 건수(같은 공고는 한 번)', c: '공고가 있다 · 낙찰업체가 확인됐다 · 실제로 POUR 공법을 썼다는 서로 다른 뜻입니다. 실제 사용(채택)은 증빙이 없어 확인되지 않았습니다. "같은 기간 공고" 증감은 작년 1/1~같은 날짜까지의 공고 수와 비교한 것입니다.' }; }],
+    [/순매출 \(2026/, function (P) { return { m: '2026년에 판매한 금액 합계입니다(부가세 제외).', s: '이카운트 판매 원장', p: '2026-01-01 ~ ' + D.ledger.maxDate, u: '금액(억 원으로 표시)', c: '반품은 빼기(음수)로 들어 있습니다. "전년 같은 기간"은 2025년 1/1~같은 날짜까지의 금액과 비교한 증감입니다.' }; }],
+    [/③ 주요 자재 매출/, function (P) { return { m: '2026년 매출 중 주요 자재(우레탄·페인트·에폭시)로 분류된 판매 금액입니다.', s: '판매 원장의 주요 자재 표시', p: '2026-01-01 ~ ' + D.ledger.maxDate, u: '금액', c: '"전체 매출 대비"는 전체 순매출로, "자재 매출 대비"는 운반비 같은 비자재를 뺀 매출로 나눈 비율입니다.' }; }],
+    [/구매율\(사업자번호/, function (P) { var K = D.kpi4.rate || {}; return { m: '사업자번호로 같은 회사임이 확인된 낙찰 시공사 ' + nf(K.firms) + '곳 중, 같은 번호로 우리 주요 자재를 산 ' + nf(K.buyers) + '곳의 비율입니다.', s: 'K-apt 낙찰 원문 사업자번호 · 검증된 구매 계정 · 판매 원장', p: '공고 2022년~ · 원장 ' + P.led, u: '업체 수(같은 사업자번호는 한 번)', c: '나머지 업체는 "구매 미확인"이지 "안 샀다"가 아닙니다. 그래서 실제보다 낮을 수 있는 최소값입니다. 낙찰 현장에 POUR 공법을 쓴 비율이 아닙니다.' }; }],
+    [/구매한 주요 자재 금액/, function (P) { return { m: '구매가 확인된 낙찰 시공사들이 산 주요 자재 금액 합계입니다.', s: '판매 원장', p: P.led, u: '금액', c: '이 자재가 그 낙찰 현장에 쓰였다는 뜻은 아닙니다.' }; }],
+    [/업체명 기준 후보/, function (P) { return { m: '업체 이름으로만 연결한 낙찰업체 중 주요 자재를 산 업체의 비율입니다.', s: '공고 낙찰 기록 · 업체 명부 · 판매 원장', p: P.not, u: '업체 수', c: '이름이 같아도 다른 회사일 수 있어 참고로만 봅니다.' }; }],
+    [/낙찰 이후 구매율/, function () { return { m: '낙찰된 뒤에 자재를 샀는지 보는 비율입니다.', u: '업체 수', c: '실제 낙찰일 기록이 없어 계산하지 않았습니다. 공고일·개찰일로 대신하지 않습니다.' }; }],
+    [/낙찰 시공사 주요 자재 구매율|④ 낙찰 시공사|KPI④/, function (P) { return { m: '공사 낙찰업체 중 우리 우레탄·페인트·에폭시 등 주요 자재를 구매한 업체가 얼마나 되는지 보여줍니다.', s: '공고 낙찰 기록 · K-apt 낙찰 원문 · 판매 원장', p: '공고 2022년~ · 원장 ' + P.led, u: '업체 수', c: '자재를 산 업체의 비율이지, 그 낙찰 현장에 POUR 공법을 쓴 비율이 아닙니다. 사업자번호로 확인한 값과 이름으로 연결한 후보 값은 섞지 않습니다.' }; }],
+    [/신규 협약업체 L3 활성화율/, function () { return { m: '협약한 날부터 1년 안에 기술지원(기술자문·컨설팅·공법설명회)을 한 번이라도 요청한 협약업체의 비율입니다.', s: '업체 명부의 협약일 · 기술지원 요청 기록', p: '고른 기간에 협약한 업체(협약한 달 기준)', u: '업체 수', c: '협약 후 1년이 안 지난 업체는 "잠정"으로 따로 셉니다. 협약일이 없는 업체는 빠집니다. 업체 연결은 이름으로 추정한 것이라 참고값입니다.' }; }],
+    [/다른 현장 재이용률/, function () { return { m: '처음 기술지원을 받은 뒤 60일 안에 다른 현장으로 또 요청한 협약업체의 비율입니다.', s: '기술지원 요청 기록(현장 정보 포함)', p: '고른 기간에 처음 이용한 업체(첫 이용한 달 기준)', u: '업체 수', c: '같은 현장에서 다시 요청한 것은 세지 않습니다. 주소까지 맞는 현장만 센 값은 따로 표시합니다.', g: '연도마다 막대 하나가 그해 비율입니다. 대상 업체 수가 적은 해는 값이 크게 흔들립니다.' }; }],
+    [/L3 도달률/, function () { return { m: '영업활동(L2)을 거쳐 기술지원(L3)까지 온 업체의 비율입니다.', u: '업체 수', c: '영업활동 기록에 업체명이 없어 지금은 계산할 수 없습니다(0%가 아님). 보조지표는 그 기간에 기술지원을 처음 이용한 업체 수입니다.' }; }],
+    [/운영 KPI 기간별 추이/, function () { return { m: '①과 ② 지표를 해마다 계산한 값입니다.', u: '비율(%)', g: '막대가 높을수록 비율이 높다는 뜻입니다. 마우스를 올리면 해당 업체 수와 전체 대상 수가 보입니다.', c: '지켜볼 기간이 안 끝난 최근 업체는 막대에 넣지 않고 표에 "잠정"으로 따로 적었습니다.' }; }],
+    [/^연도별 순매출$/, function (P) { return { m: '해마다 판매한 금액 합계입니다.', s: '판매 원장', p: P.led, u: '금액(억 원)', g: '막대 하나가 한 해 매출입니다. 2026년은 ' + D.ledger.maxDate + '까지라 덜 찬 해입니다. 해마다 같은 날짜까지 비교하려면 "같은 기간" 표를 보세요.' }; }],
+    [/연도별 POUR 공고·낙찰|KPI① 연도별 공고·낙찰/, function (P) { return { m: '해마다 우리 특허번호가 적힌 공고 수와, 그중 낙찰업체가 확인된 공고 수입니다.', s: '공고문 현황(2022~2025 보관 자료, 2026 자동 동기화)', p: P.not, u: '공고 건수', g: '파란 막대 = 특허번호 기재 공고, 초록 막대 = 그중 낙찰업체 확인 공고입니다. 2026년은 기준일까지라 덜 찬 해입니다.', c: '낙찰업체가 확인됐다고 POUR 공법을 실제로 쓴 것은 아닙니다.' }; }],
+    [/이번 기간 변화/, function (P) { return { m: '올해 1월 1일~기준일과 작년 같은 날짜 범위를 나란히 비교한 표입니다.', p: P.ytd, u: '금액·건수', c: '증감 % = (올해 − 작년) ÷ 작년입니다.' }; }],
+    [/주요 확인 필요 사항/, function () { return { m: '자료가 부족하거나 연결이 확인되지 않아 숫자를 확정하지 못한 항목 목록입니다.' }; }],
+    [/데이터 기준/, function () { return { m: '이 화면 숫자가 어느 날짜까지의 자료로 계산됐는지 보여줍니다.' }; }],
+    [/팀장님 핵심 KPI/, function () { return { m: '공고·낙찰, 매출, 주요 자재 매출, 낙찰 시공사 구매율 네 가지 핵심 지표입니다.' }; }],
+    [/운영 KPI \(업무트래커\)|운영 KPI 분석/, function () { return { m: '업무트래커의 운영 지표 3개입니다. 기준·목표·도전 값은 목표치이며 달성 여부는 판정하지 않습니다.' }; }],
+    [/매출 및 공고 추이/, function () { return { m: '해마다 매출과 공고 수가 어떻게 바뀌었는지 보여줍니다.' }; }],
+    [/월별 순매출/, function (P) { return { m: '달마다 판매한 금액입니다.', s: '판매 원장', p: '고른 기간', u: '금액', g: '선 위의 점 하나가 한 달 매출입니다. 마우스를 올리면 그 달 금액이 보입니다. 주요 자재 선은 2024년부터만 있습니다.' }; }],
+    [/매출 구성/, function () { return { m: '고른 기간의 매출을 주요 자재(페인트·우레탄·에폭시)와 그 밖의 분류로 나눈 것입니다.', s: '판매 원장 · 품목 분류표', p: '고른 기간', u: '금액', g: '막대가 길수록 그 분류 매출이 크다는 뜻입니다.' }; }],
+    [/같은 기간 비교/, function (P) { return { m: '해마다 1월 1일부터 같은 날짜까지만 더한 매출을 비교합니다.', p: P.ytd, u: '금액', g: '막대끼리 높이를 비교하면 같은 기간 매출이 늘었는지 줄었는지 알 수 있습니다.' }; }],
+    [/주요 자재 연도별/, function (P) { return { m: '해마다 주요 자재 매출을 우레탄·페인트·에폭시로 나눠 쌓은 것입니다.', p: P.mainY, u: '금액', g: '막대 전체 높이 = 그해 주요 자재 매출, 색 조각 = 자재별 금액입니다.', c: '2022~2023년은 주요 자재 분류가 없어 표시하지 않습니다.' }; }],
+    [/거래처별 순매출/, function (P) { return { m: '거래처마다 판매 금액을 큰 순서로 보여줍니다.', p: P.led, u: '금액', c: '거래처 이름 표기 단위라 같은 회사라도 표기가 다르면 따로 나옵니다.' }; }],
+    [/신규·기존 거래처/, function () { return { m: '그해 처음 산 거래처(신규)와 그 전에도 산 거래처(기존)의 매출을 나눈 것입니다.', u: '거래처 수·금액', g: '막대 아래쪽이 기존, 위쪽이 신규 거래처 매출입니다.', c: '2022년은 이전 기록이 없어 비교하지 않습니다.' }; }],
+    [/재구매 현황|재구매 거래처/, function () { return { m: '두 번 이상(다른 날) 구매한 거래처 수입니다.', u: '거래처 수' }; }],
+    [/구매 간격/, function () { return { m: '두 번 이상 산 거래처가 다음 구매까지 보통 며칠 걸리는지 나타냅니다(가운데 값).', u: '일수', c: '평균이 아니라 가운데 값(중앙값)이라 아주 긴 간격 하나에 흔들리지 않습니다.' }; }],
+    [/우레탄·페인트·에폭시별 구매 거래처/, function (P) { return { m: '해마다 우레탄·페인트·에폭시를 산 거래처 수입니다.', p: P.mainY, u: '거래처 수', g: '자재별 막대 높이가 그 자재를 산 거래처 수입니다.' }; }],
+    [/최근 구매·장기 미구매/, function () { return { m: '거래처마다 마지막으로 산 날이 원장 마지막 거래일로부터 얼마나 지났는지 나눈 것입니다.', u: '거래처 수·금액', c: '180일 넘게 사지 않은 거래처는 "장기 미구매"로 봅니다.' }; }],
+    [/품목별/, function (P) { return { m: '품목(제품)마다 판매 금액입니다. 구분·연도·검색으로 좁혀 볼 수 있습니다.', p: P.led, u: '금액' }; }],
+    [/^순매출$/, function () { return { m: '고른 기간에 판매한 금액 합계입니다(부가세 제외, 반품 포함).', u: '금액' }; }],
+    [/자재 매출\(비자재 제외\)/, function () { return { m: '순매출에서 운반비 같은 비자재 품목을 뺀 금액입니다.', u: '금액' }; }],
+    [/^주요 자재$/, function () { return { m: '고른 기간 매출 중 주요 자재로 분류된 금액입니다.', u: '금액', c: '2024년 전 기간이 섞이면 그 부분은 분류가 없어 계산되지 않습니다.' }; }],
+    [/미분류·분류 확인 필요/, function () { return { m: '아직 품목 분류가 정해지지 않았거나 다시 확인해야 하는 매출입니다.', u: '금액' }; }],
+    [/업체별 매출|거래처 구매 분석/, function () { return { m: '거래처 단위로 매출과 구매 습관을 보는 영역입니다.' }; }],
+    [/현장 목록/, function () { return { m: '공고를 세 가지로 나눠 볼 수 있습니다. 전체 공고 / 낙찰 확인 현장(공사 업체가 정해진 공고: 낙찰·타공법·무효·해지) / 낙찰 미확인 현장(유찰·취소·결과 대기·자료 없음).', u: '공고 건수와 현장 수', c: '공고 1건은 한 번만 셉니다. "자료 미확보"는 결과 기록이 없는 것이지 낙찰이 안 됐다는 뜻이 아닙니다.' }; }],
+    [/POUR 특허번호 기재 공고/, function () { return { m: '우리 특허번호가 적힌 공고 수입니다.', s: '공고문 현황의 특허 칸', u: '공고 건수', c: '번호 없이 "POUR공법"만 적힌 공고는 "POUR 관련 후보"로 따로 셉니다.' }; }],
+    [/POUR 관련 후보 공고/, function () { return { m: '특허번호는 없지만 POUR 공고 목록에 있는 공고 수입니다.', u: '공고 건수', c: '확정 건수에는 넣지 않습니다.' }; }],
+    [/^낙찰업체 확인$/, function () { return { m: '특허번호 기재 공고 중 공사를 맡을 업체가 확인된 공고 수입니다.', u: '공고 건수', c: '낙찰업체가 확인됐다고 POUR 공법을 실제로 쓴 것은 아닙니다.' }; }],
+    [/타공법 낙찰/, function () { return { m: '우리 특허가 적힌 공고였지만 다른 공법으로 낙찰된 공고 수입니다.', u: '공고 건수' }; }],
+    [/실제 POUR 채택 확정/, function () { return { m: '계약·시공 증빙으로 POUR 공법을 실제로 쓴 것이 확인된 공고입니다.', c: '그런 증빙이 아직 0건이라 "증빙 확인 필요"로 표시합니다.' }; }],
+    [/낙찰 상태 구분/, function () { return { m: '공고마다 결과가 어떻게 됐는지 나눈 것입니다.', u: '공고 건수', g: '막대 하나가 한 해이고, 색 조각이 낙찰·타공법 낙찰·유찰·취소·무효·진행 중 건수입니다.' }; }],
+    [/공종별 POUR 공고·낙찰/, function () { return { m: '공종(재도장·방수·지붕 등)마다 공고 수와 낙찰업체 확인 수입니다.', u: '공고 건수', g: '두 막대를 비교하면 공종별로 낙찰업체까지 확인된 공고가 얼마나 되는지 알 수 있습니다.', c: '공종은 공고의 공종·공사명 단어로 묶었습니다. 표의 타공법 비율이 10% 이상이면 빨간색입니다.' }; }],
+    [/전체 공고 대비 POUR 특허번호 기재 비율/, function () { return { m: '아파트 공고 전체 중 우리 특허번호가 적힌 공고의 비율입니다.', s: '전체 공고문 목록(2025년 사본, 2026년 자동 동기화)', u: '공고 건수 비율', g: '막대 높이가 그해 비율입니다.', c: '2022~2024년은 전체 공고 목록이 없어 계산하지 않았습니다. 두 해의 목록 출처가 달라 참고로만 봅니다.' }; }],
+    [/낙찰업체.*주요 자재 구매 후보/, function (P) { return { m: '낙찰업체 이름을 업체 명부 → 사업자번호 → 판매 원장 순서로 붙여, 주요 자재를 산 것으로 보이는 업체입니다.', p: P.led, u: '업체 수·금액', c: '이름으로 붙인 후보라 확정이 아닙니다. 그 낙찰 현장에 자재를 썼다는 뜻도 아닙니다.' }; }],
+    [/^낙찰 업체$|명부 사업자번호 있음|ERP 구매 연결|주요 자재 구매\(후보\)/, function () { return { m: '낙찰업체를 명부·판매 원장과 이름으로 연결해 가는 단계별 업체 수입니다.', u: '업체 수', c: '이름으로 연결한 후보 값입니다.' }; }],
+    [/POUR 공고 낙찰업체|낙찰업체별 이력/, function () { return { m: '업체마다 해마다 몇 건을 낙찰받았는지, 판매 원장과 연결되는지 보여주는 표입니다.', u: '공고 건수·금액', c: '판매 금액은 이름으로 연결한 후보입니다.' }; }],
+    [/연도·공종별 분석/, function () { return { m: '위 필터(연도·공종·특허번호)에 맞춰 공고와 낙찰을 그래프로 보여줍니다.' }; }],
+    [/업체별 기술지원·공고·매출 연결/, function () { return { m: '업체마다 기술지원(L3)·낙찰(L4)·구매(L5) 기록이 어떤 조합으로 있는지 센 것입니다.', u: '업체 수', g: '막대가 길수록 그 조합의 업체가 많다는 뜻입니다.', c: '업체 연결에는 이름 추정이 들어 있습니다.' }; }],
+    [/^아파트별 영업활동$/, function () { return { m: '이 업체의 영업활동 기록입니다.', c: '영업활동 기록에는 업체명이 없어 업체별로는 볼 수 없습니다.' }; }],
+    [/^L4 공고·낙찰$/, function () { return { m: '이 업체가 POUR 공고를 낙찰받은 기록입니다.', u: '공고 건수·낙찰 금액', c: '실제 POUR 채택은 증빙이 없어 확인되지 않았습니다.' }; }],
+    [/^L5 매출·구매$/, function () { return { m: '이 업체가 우리 자재를 산 기록(판매 원장)입니다.', u: '금액·구매일 수', c: '사업자번호 후보로 연결된 경우만 보여줍니다.' }; }],
+    [/^검증 상태$/, function () { return { m: '이 업체 정보가 어떤 근거로 연결됐는지 보여줍니다.' }; }],
+    [/L1~L5 단계별 현황|단계별 업체 수/, function () { return { m: 'L1 관심 → L2 영업 → L3 기술지원 → L4 낙찰 → L5 구매 단계마다 기록이 있는 업체 수입니다.', u: '업체 수', g: '막대가 길수록 그 단계에 기록이 있는 업체가 많다는 뜻입니다.', c: 'L2는 업체별 자료가 없어 0이 아니라 "자료 없음"입니다. 업체 연결은 이름 추정을 포함합니다.' }; }],
+    [/단계 겹침/, function () { return { m: '같은 업체가 여러 단계에 함께 기록된 경우를 센 것입니다.', u: '업체 수' }; }],
+    [/협약업체\(협약 코드/, function () { return { m: '협약 코드가 있는 업체 중 기술지원·낙찰·구매 기록이 있는 업체 수와 비율입니다.', u: '업체 수' }; }],
+    [/관리 대상 업체|대상 업체 목록/, function () { return { m: '협약 업체 중 오래 활동이 없거나 기술지원을 이용하지 않은 업체를 골라 보는 목록입니다.', u: '업체 수' }; }],
+    [/장기 무활동/, function () { return { m: '협약 업체 중 마지막 활동(관심·기술지원·낙찰·구매)이 180일 넘게 지났거나 기록이 아예 없는 업체 수입니다.', u: '업체 수' }; }],
+    [/L3 미이용/, function () { return { m: '협약 업체 중 기술지원 요청 기록이 한 번도 없는 업체 수입니다.', u: '업체 수' }; }],
+    [/재이용 관리 대상/, function () { return { m: '기술지원을 한 번만 받았거나 마지막 이용이 180일 넘게 지난 협약 업체 수입니다.', u: '업체 수' }; }],
+    [/^기준일$/, function () { return { m: '경과일을 계산한 기준 날짜입니다.' }; }],
+    [/협약 후 기술지원\(L3\) 이용률|협약 후 L3 이용|협약 후 기술지원 이용/, function () { return { m: '협약일 이후 기간 제한 없이 기술지원을 한 번이라도 요청한 협약 업체의 비율입니다.', u: '업체 수', c: '①(협약 후 1년 이내)과 기준이 다릅니다. 협약일이 없는 업체는 빠집니다.' }; }],
+    [/첫 기술지원까지/, function () { return { m: '협약일부터 처음 기술지원을 요청하기까지 보통 며칠 걸렸는지 나타냅니다(가운데 값).', u: '일수' }; }],
+    [/기술지원 이후 구매/, function () { return { m: '기술지원을 요청한 업체가 그 뒤에 우리 자재를 샀는지 순서만 본 것입니다.', u: '업체 수', c: '기술지원 때문에 샀다는 뜻(원인)은 아닙니다. 구매 연결은 사업자번호 후보입니다.' }; }],
+    [/연도별 L3 요청/, function () { return { m: '해마다 기술자문·컨설팅·공법설명회 요청 건수입니다.', u: '요청 건수', g: '막대 전체 높이 = 그해 요청 합계, 색 조각 = 요청 종류입니다.', c: '2022~2023년은 기록 범위가 작아 실제보다 적게 나옵니다.' }; }],
+    [/월별 L3 요청/, function () { return { m: '달마다 기술지원 요청 건수입니다.', u: '요청 건수', g: '선마다 요청 종류이고, 점 하나가 한 달입니다.' }; }],
+    [/보조지표/, function () { return { m: '고른 기간에 기술지원(L3)을 처음 요청한 대상 수입니다(업체 확인 중).', u: '요청 대상 수(식별자 기준)', c: '관리주체·개인·내부 표기·설계감리 등 시공사가 아닌 요청자가 포함돼 있어 시공사 수가 아닙니다. 영업활동(L2) 기록이 없다고 직접 진입으로 단정하지 않습니다.' }; }],
+    [/자동 동기화 원천/, function () { return { m: '원천 구글시트에서 30분마다 자동으로 가져오는 표의 마지막 결과입니다.', u: '행 수' }; }],
+    [/고정 원천/, function () { return { m: '자동으로 바뀌지 않는 기준 표들의 행 수입니다.', u: '행 수' }; }],
+    [/탭 분류|데이터 분류/, function () { return { m: '통합시트 탭을 확정·참고·검증 중·사본 등으로 나눈 것입니다. 합계에는 확정 탭만 씁니다.', u: '탭 수' }; }],
+    [/미연결 업체/, function () { return { m: '어느 회사인지 확정하지 못한 기록 수입니다.', u: '행·업체 수' }; }],
+    [/사업자번호 충돌/, function () { return { m: '같은 번호를 여러 업체가 쓰거나 이름과 코드가 맞지 않는 경우입니다. 번호는 가리고 업체명만 보여줍니다.', u: '건수' }; }],
+    [/잘못된 낙찰·취소·재선정/, function () { return { m: '낙찰무효·공고 취소·유찰·재공고처럼 결과가 바뀐 공고 수입니다.', u: '공고 건수' }; }],
+    [/부족한 증빙/, function () { return { m: '숫자를 확정하려면 더 필요한 증빙 목록입니다.' }; }],
+    [/업체코드 정정/, function () { return { m: '2024년 공고 원본의 업체코드가 잘못 옮겨진 기록을 별도 표로 바로잡은 결과입니다.', u: '행·업체 수', c: '원본은 고치지 않았습니다. 이름만 같은 경우는 같은 업체로 확정하지 않았습니다.' }; }],
+    [/원장 계산값|금액 검산/, function () { return { m: '이 화면의 매출 합계와, 시트에서 따로 다시 계산한 값을 나란히 비교한 표입니다.', u: '금액', c: '2026년은 원장이 새로 갱신돼 차이가 날 수 있습니다.' }; }],
+    [/연결·충돌·증빙/, function () { return { m: '업체 연결이 안 되거나 번호가 겹치거나 증빙이 부족한 자료를 모아 보여줍니다.' }; }],
+    [/데이터 전체 점검/, function () { return { m: '모든 탭의 원본 행 수와 이 화면에서 볼 수 있는 행 수를 비교합니다.', u: '탭 수·행 수' }; }],
+    [/데이터 묶음/, function () { return { m: '조회할 수 있는 표의 개수입니다(통합시트 탭 + 로컬 엑셀).', u: '표 개수' }; }],
+    [/원본 기록/, function () { return { m: '모든 표의 행 수 합계입니다(머리글 제외, 사본 포함).', u: '행 수', c: '사본도 포함한 수라 매출·공고 합계와 다릅니다.' }; }],
+    [/합계에 쓰는 탭/, function () { return { m: '매출 원장처럼 숫자를 더할 때 기준이 되는 표 개수입니다.', u: '표 개수' }; }],
+    [/확인용 탭/, function () { return { m: '원본 사본·요약이라 합계에 다시 더하지 않는 표 개수입니다.', u: '표 개수' }; }],
+    [/원본 자료 목록/, function () { return { m: '이 메뉴에 속한 원본 표 목록입니다. [조회]를 누르면 원본 행을 볼 수 있습니다.' }; }],
+    [/^[①-⑧] /, function () { return { m: '이 메뉴에 속한 원본 기록과 요약 숫자입니다.' }; }],
+    [/매출 원장/, function () { return { m: '판매 원장의 줄 수입니다.', u: '행 수' }; }],
+    [/순매출 합계/, function (P) { return { m: '판매 원장 전체 기간의 판매 금액 합계입니다(부가세 제외).', p: P.led, u: '금액' }; }],
+    [/^주요 자재 매출$/, function (P) { return { m: '주요 자재로 분류된 판매 금액 합계입니다.', p: P.mainY, u: '금액' }; }],
+    [/^거래처$/, function () { return { m: '판매 원장에 나오는 거래처 이름의 수입니다.', u: '거래처 수' }; }],
+    [/업체 색인/, function () { return { m: '협약 코드·기술지원·낙찰·판매 원장에 나오는 업체를 식별자별로 모은 수입니다.', u: '업체 수' }; }],
+    [/^협약 코드 업체$/, function () { return { m: 'B2B 협약 코드가 있는 업체 수입니다.', u: '업체 수' }; }],
+    [/^임시 식별자$/, function () { return { m: '이름만 보이고 어느 회사인지 확정하지 못한 표기 수입니다.', u: '개수' }; }],
+    [/ERP 거래처만/, function () { return { m: '판매 원장에는 있지만 업체 명부와 연결되지 않은 거래처 수입니다.', u: '거래처 수' }; }],
+    [/협약일 확인|협약일 없음/, function () { return { m: '협약 코드 업체 중 협약일이 기록된(또는 비어 있는) 업체 수입니다.', u: '업체 수' }; }],
+    [/^전체 행$/, function () { return { m: '이 표의 원본 행 수입니다(머리글 제외).', u: '행 수' }; }],
+    [/조건에 맞는 행/, function () { return { m: '검색어와 기간 조건을 통과한 행 수입니다.', u: '행 수' }; }],
+    [/^빈 행$/, function () { return { m: '값이 하나도 없는 행입니다. 빼지 않고 함께 셉니다.', u: '행 수' }; }],
+    [/날짜 없어/, function () { return { m: '기간 필터를 쓸 때 날짜 칸이 비어 있어 빠진 행 수입니다.', u: '행 수' }; }],
+    [/공법설명회\(PT\) 신청/, function () { return { m: '공법설명회를 요청한 횟수입니다.', s: '잔디 PT 요청 목록', u: '신청 건수(신청한 해 기준)', c: '신청과 실제 진행은 다릅니다. 신청 수로 진행률을 나누지 않습니다.' }; }],
+    [/신청 중 진행 확인/, function () { return { m: '신청 기록 가운데 진행까지 확인된 신청 수입니다.', u: '신청 건수', c: '신청 기록과 연결되지 않은 진행(실적보고서·플랫폼 기록)은 여기 들어가지 않아 "실제 PT 진행"보다 적습니다.' }; }],
+    [/실제 PT 진행/, function () { return { m: '실제로 진행한 것으로 확인된 공법설명회 수입니다.', s: '잔디 진행 확인 · 2025 PT 실적보고서 · 2026 플랫폼 완료 기록', u: '진행 횟수(같은 아파트·같은 달은 1번, 진행한 해 기준)', c: '신청한 해와 진행한 해가 다를 수 있습니다.' }; }],
+    [/진행 확정\(예정\)/, function () { return { m: '앞으로 진행하기로 일정이 잡힌 신청 수입니다.', u: '신청 건수', c: '아직 진행 수에 넣지 않습니다.' }; }],
+    [/^취소$/, function () { return { m: '취소가 확인된 신청 수입니다.', u: '신청 건수' }; }],
+    [/진행 여부 미확인/, function () { return { m: '진행했는지 기록이 없는 신청 수입니다.', u: '신청 건수', c: '0건(안 함)이 아니라 결과가 기록되지 않은 것입니다.' }; }],
+    [/2026 결과 미기록/, function () { return { m: '2026년 플랫폼에서 날짜가 지났는데 완료·취소가 기록되지 않은 공법설명회 수입니다.', u: '건수', c: '2026년 실제 진행은 표시된 수보다 많을 수 있습니다.' }; }],
+    [/^영업활동 기록$/, function () { return { m: '영업 담당이 잔디에 남긴 아파트별 영업활동 글 수입니다.', u: '글 수', c: '기술문의와 영업보고는 같은 자료라 한 번만 셉니다. 내용별 확인 전이라 참고값입니다.' }; }],
+    [/^영업활동 현장$/, function () { return { m: '영업활동 기록이 있는 아파트 수입니다.', u: '아파트 수', c: '이름이 같아도 주소가 다르면 다른 아파트로 셉니다.' }; }],
+    [/^연결 확인$/, function () { return { m: '영업활동 이후 PT 진행까지 확인된 아파트 수입니다.', u: '아파트 수', c: '아파트 이름·주소(시·구)가 같고 영업활동 날짜가 PT보다 앞선 경우만 셉니다.' }; }],
+    [/같은 현장인지 확인 필요/, function () { return { m: '아파트 이름만 같아 같은 현장인지 더 확인해야 하는 수입니다.', u: '아파트 수' }; }],
+    [/영업활동 후 PT 진행 비율/, function () { return { m: '영업활동을 한 아파트 중 이후 PT 진행까지 확인된 비율입니다.', u: '비율(%)', c: 'PT 진행 기록이 대부분 2025년에 있어 다른 해는 낮게 나오는 참고값입니다.' }; }],
+    [/^공법설명회\(PT\) — 신청과/, function () { return { m: '공법설명회 신청과 실제 진행 숫자입니다.', c: '신청 건수와 실제 진행 건수는 세는 기준이 달라 서로 나누지 않습니다.' }; }],
+    [/아파트별 영업활동 → 공법설명회/, function () { return { m: '영업활동을 한 아파트에서 이후 공법설명회가 진행됐는지 아파트 이름·주소로 연결한 결과입니다.', c: '시공사명은 쓰지 않았습니다.' }; }],
+    [/^연도별$/, function () { return { m: '해마다 신청·진행·영업활동 숫자를 나란히 놓은 표입니다.', c: '"신청" 칸은 신청한 해, "실제 진행" 칸은 진행한 해 기준이라 서로 맞지 않을 수 있습니다.' }; }],
+    [/L3 기술지원·PT·컨설팅/, function () { return { m: '기술자문·컨설팅 내역서·공법설명회(PT) 요청 기록입니다.', u: '요청 건수', c: '업체 연결은 이름 추정을 포함합니다.' }; }],
+    [/_/, function () { return { m: '선택한 원본 표입니다. 시트의 행 번호와 함께 원본 그대로 보여줍니다.', u: '행 수', c: '조회하는 것과 KPI 합계에 더하는 것은 별개입니다.' }; }],
+    [/^낙찰 시공사$/, function () { return { m: 'POUR 공고를 낙찰받은 업체 수입니다.', u: '업체 수' }; }]
+  ];
+  var HELP_COLS = [[/^연도$/, '몇 년도인지'], [/공고/, '공고 건수'], [/낙찰업체 확인/, '공사 업체가 확인된 공고 수'], [/금액|매출|순매출|가액/, '금액(부가세 제외)'], [/업체|거래처/, '업체 수 또는 업체 이름'], [/비율|%|율/, '비율(%)'], [/현장/, '아파트(현장) 수 또는 이름'], [/신청/, '신청 건수'], [/진행/, '진행 건수'], [/일$|날짜|일자/, '날짜'], [/행/, '표의 줄 수'], [/상태|판정|구분/, '상태·구분'], [/근거/, '그렇게 판단한 이유'], [/증감/, '작년 같은 기간보다 늘었는지(+) 줄었는지(−)']];
+  function helpLabel(el) { var c = el.cloneNode(true); [].forEach.call(c.querySelectorAll('.badge, .hbtn'), function (x) { x.remove(); }); var t = c.textContent.replace(/\s+/g, ' ').trim(); if (!t) { c = el.cloneNode(true); [].forEach.call(c.querySelectorAll('.hbtn'), function (x) { x.remove(); }); t = c.textContent.replace(/\s+/g, ' ').trim(); } return t; }
+  function helpOpen(el, ctx, val) { var lab = helpLabel(el), P = hp(), info = null; for (var i = 0; i < HELP.length && !info; i++) if (HELP[i][0].test(lab)) info = HELP[i][1](P);
+    if (!info && ctx && ctx.querySelector && /마지막 활동일/.test(ctx.textContent)) info = { m: '고른 업체의 기본 정보입니다(식별자·다른 표기·마지막 활동일·협약 여부).', c: '이름이 같아도 식별자가 다르면 다른 업체로 따로 보여줍니다.' };
+    if (!info) { var bt = el.querySelector('.badge'); var bx = bt ? bt.textContent.replace(/^[^가-힣A-Za-z]+/, '').trim() : ''; var st = bt ? Object.keys(HELP_ST).filter(function (x) { return bt.textContent.indexOf(x) >= 0 || (bx.length > 1 && x.indexOf(bx) >= 0); })[0] : ''; if (st) info = { m: '"' + st + '"(으)로 분류된 탭(표)의 수입니다. ' + HELP_ST[st], u: '탭 수' }; }
+    var rows = [];
+    rows.push([lab + (val ? ' = ' + val : ''), info ? info.m : '화면에 적힌 이름 그대로의 항목입니다.']);
+    if (info && info.s) rows.push(['어디서 나온 숫자인가요?', info.s]); if (info && info.p) rows.push(['언제부터 언제까지?', info.p]); if (info && info.u) rows.push(['무엇을 셌나요?', info.u]); if (info && info.c) rows.push(['헷갈리기 쉬운 점', info.c]);
+    var hasChart = ctx && ctx.querySelector && ctx.querySelector('.chart'); if (hasChart) rows.push(['이 그래프 보는 방법', (info && info.g) || '막대(또는 점)가 높을수록 값이 크다는 뜻입니다. 마우스를 올리거나 누르면 실제 숫자가 보입니다.']);
+    var tb = ctx && ctx.querySelector && ctx.querySelector('table'); if (tb) { var hs = [].map.call(tb.querySelectorAll('thead th'), function (th) { return th.textContent.trim(); }).filter(Boolean).slice(0, 12); if (hs.length) rows.push(['표의 각 칸', hs.map(function (h) { for (var j = 0; j < HELP_COLS.length; j++) if (HELP_COLS[j][0].test(h)) return h + ': ' + HELP_COLS[j][1]; return h; }).join(' · ')]); }
+    var host = (ctx && ctx.querySelectorAll) ? ctx : el.parentNode, seen = {}; [].forEach.call((el.closest('.tile, .kpi') || host).querySelectorAll('.badge'), function (b) { var t = b.textContent.replace(/^[^가-힣A-Za-z]+/, '').trim(); var k = Object.keys(HELP_ST).filter(function (x) { return t.indexOf(x) === 0 || (x === '산출 대기' && /자료 부족/.test(t)); })[0]; if (k && !seen[k]) { seen[k] = 1; rows.push(['표시 "' + t + '"', HELP_ST[k]]); } });
+    HELP_TERMS.forEach(function (t) { if (t[0].test(lab) && rows.length < 12) rows.push(['용어: ' + t[1], t[2]]); });
+    openDetail('이 숫자는 무슨 뜻인가요?', '<div class="help-tbl">' + table([{ t: '화면에 보이는 내용' }, { t: '쉬운 뜻' }], rows) + '</div>'); }
+  function helpBtn(target, ctx, valFn) { if (!target || target.getAttribute('data-hd')) return; target.setAttribute('data-hd', '1'); var b = el('button', { type: 'button', class: 'hbtn', 'aria-label': '설명 보기' }, 'ⓘ 설명'); b.addEventListener('click', function (e) { e.stopPropagation(); e.preventDefault(); helpOpen(target, ctx, valFn ? valFn() : ''); }); target.appendChild(b); }
+  function helpDecorate(root) { if (!root || !D) return;
+    [].forEach.call(root.querySelectorAll('h3.sec'), function (h) { helpBtn(h, h.nextElementSibling); });
+    [].forEach.call(root.querySelectorAll('.card h4, .card h5'), function (h) { if (h.closest('table, .tbl-wrap')) return; helpBtn(h, h.parentNode.classList.contains('card') && h.parentNode.firstElementChild === h ? h.parentNode : h.nextElementSibling); });
+    [].forEach.call(root.querySelectorAll('.kpi > .k > span:first-child'), function (sp) { var k = sp.closest('.kpi'); helpBtn(sp, k, function () { var v = k.querySelector('.v'); return v ? v.textContent.trim() : ''; }); });
+    [].forEach.call(root.querySelectorAll('.tile .k'), function (kk) { var t = kk.closest('.tile'); helpBtn(kk, null, function () { var v = t.querySelector('.v'); return v ? v.textContent.trim() : ''; }); }); }
+  var helpQ = 0; function helpLater() { if (helpQ) return; helpQ = setTimeout(function () { helpQ = 0; try { helpDecorate($('#main')); } catch (e) { } }, 30); }
+  if (window.MutationObserver) new MutationObserver(helpLater).observe($('#main'), { childList: true, subtree: true });
+
+  // ── 시작 ──
+  function render(resp) {
+    R = resp;
+    if (!resp || !resp.ok) { var code = resp && resp.code; setStat('err', '<span class="pill err"><i></i>연결 실패</span>');
+      showState(code === 'NO_ACCESS' ? '열람 권한이 없습니다' : '데이터를 불러오지 못했습니다', esc((resp && resp.message) || '알 수 없는 오류') + (resp && resp.user ? '<br><small>로그인 계정: ' + esc(resp.user) + '</small>' : '') + '<br><br>숫자를 표시하지 않았습니다(이전 값이나 임의 값으로 대신하지 않음).', '<button class="btn primary" type="button" id="retry">다시 시도</button>'); var rb = $('#retry'); if (rb) rb.onclick = function () { load(false); }; return; }
+    try { D = JSON.parse(resp.json); } catch (e) { render({ ok: false, message: '결과를 읽지 못했습니다: ' + e.message }); return; }
+    var stale = resp.status === 'stale';
+    setStat(stale ? 'stale' : 'ok', '<span class="pill' + (stale ? ' stale' : '') + '"><i></i>' + (stale ? '이전 계산값' : '최신') + ' · 동기화 ' + esc((resp.sync.lastSuccess || '').slice(5, 16)) + ' · 계산 ' + esc((resp.meta.computedAt || '').slice(5, 16)) + '</span>' + (resp.user ? '<span class="pill" title="로그인 계정">' + esc(resp.user) + '</span>' : '') + '<button class="btn light" type="button" id="reload">새로고침</button>');
+    $('#reload').onclick = function () { load(true); };
+    var tabs = $('#tabs'), main = $('#main'); tabs.innerHTML = ''; main.innerHTML = ''; secs = {}; done = {};
+    if (stale || resp.warning) add(main, '<div class="callout' + (stale ? '' : ' blue') + '">' + (stale ? '<b>주의:</b> ' : '') + esc(resp.warning || '최신 계산에 실패했습니다.') + (stale ? ' 아래 숫자는 ' + esc(resp.meta.computedAt) + ' 계산값입니다.' : '') + '</div>');
+    PAGES.forEach(function (p) { var b = el('button', { role: 'tab', 'data-p': p[0], type: 'button', 'aria-selected': 'false' }, p[1]); tabs.appendChild(b); var sec = el('section', { class: 'page', id: 'p-' + p[0], role: 'tabpanel' }); main.appendChild(sec); secs[p[0]] = sec; });
+    tabs.onclick = function (e) { var b = e.target.closest('button'); if (b) go(b.getAttribute('data-p')); };
+    $('#foot').innerHTML = '데이터: B2B 통합 구글시트(읽기 전용) · 원장 ' + esc(D.ledger.minDate) + '~' + esc(D.ledger.maxDate) + ' · 분석 ' + esc(D.version) + ' · 계산 ' + esc(resp.meta.computedAt) + ' · 사업자번호·원장 전표는 화면에 표시하지 않습니다.';
+    go((location.hash.match(/p=([a-z]+)/) || [])[1] || store('b2bdash.tab') || 'home');
+  }
+  function load(force) {
+    var rb = $('#reload'); if (rb) { rb.disabled = true; rb.textContent = '계산 중…'; }
+    if (!D) showState('통합시트에서 불러오는 중', '로그인한 구글 계정의 권한으로 시트를 읽고 KPI를 계산합니다. 시트가 바뀐 뒤 처음 열면 1~2분 걸릴 수 있습니다.', '', true);
+    if (window.__TEST_RESPONSE__) { setTimeout(function () { render(window.__TEST_RESPONSE__); }, 0); return; }
+    google.script.run.withSuccessHandler(render).withFailureHandler(function (err) { if (D && R) { R.status = 'stale'; R.warning = '새로고침 실패: ' + (err && err.message || err); render(R); } else render({ ok: false, message: String(err && err.message || err) }); }).getDashboard(!!force);
+  }
+  var inGas = typeof google !== 'undefined' && google.script && google.script.run;
+  if (window.__TEST_RESPONSE__ || inGas) load(false);
+  else { setStat('err', '<span class="pill err"><i></i>미연결</span>'); showState('구글 계정 인증이 필요합니다', '이 파일에는 데이터가 들어 있지 않습니다. 통합시트 열람 권한이 있는 구글 계정으로 아래 웹앱을 열면 실제 시트 데이터를 읽어 표시합니다.', /^https:/.test(WEBAPP_URL) ? '<a class="btn primary" href="' + esc(WEBAPP_URL) + '" target="_blank" rel="noopener">대시보드 열기(구글 로그인)</a>' : '<p class="note">웹앱 주소가 아직 설정되지 않았습니다.</p>'); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "sheetId": "통합 구글시트 ID (저장소에 올리지 말 것)",
+  "webappUrl": "https://script.google.com/macros/s/.../exec",
+  "fix2024Path": "저장소 밖 경로/fix2024.json (선택)",
+  "extB64Path": "저장소 밖 경로/ext.b64 (선택, tools/build-ext.cjs 로 생성)"
+}
